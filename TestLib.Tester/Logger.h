@@ -12,12 +12,7 @@ namespace Internal
 	public:
 		Logger() : log(nullptr), userData(nullptr) { }
 
-		void SetCallback(LogCallback _log, void * _userData) {
-			log = _log;
-			userData = _userData;
-
-			Debug(L"Check native log from " __FUNCTIONW__);
-		}
+		void SetCallback(LogCallback _log, void * _userData);
 
 		void Debug(wchar_t * format, ...);
 		void Info(wchar_t * format, ...);

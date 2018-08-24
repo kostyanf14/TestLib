@@ -4,6 +4,15 @@ namespace Internal
 {
 	Logger * logger = nullptr;;
 
+	void Logger::SetCallback(LogCallback _log, void * _userData)
+	{
+		log = _log;
+		userData = _userData;
+
+		Debug(L"Check native log from " __FUNCTIONW__);
+	}
+
+
 /*
 varargs not supported under /clr
 internal logger calls only at native code
