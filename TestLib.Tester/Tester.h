@@ -173,10 +173,10 @@ namespace Internal
 				openMode = OPEN_ALWAYS;
 				break;
 				/*case RedirectFileHandleMode::Rewrite:
-					rwMode = GENERIC_WRITE;
-					openMode = CREATE_ALWAYS;
-					break;
-					*/
+				rwMode = GENERIC_WRITE;
+				openMode = CREATE_ALWAYS;
+				break;
+				*/
 			default:
 				//LogError(L"IOHandleType incorrect _handleType = %hhu", (uint8)_handleType);
 				return false;
@@ -292,19 +292,24 @@ namespace Internal
 		bool applyMemoryLimit()
 		{
 			if (limits.memoryLimitKb <= 0)
+			{
+				Internal::logger->Warning(L"Can't set not positive memory limit. MemoryLimitKb = %lu\n",
+					limits.memoryLimitKb);
+
 				return false;
+			}
 
 			JOBOBJECT_EXTENDED_LIMIT_INFORMATION jobExtendedLimits = { 0 };
 
 			if (!QueryInformationJobObject(startupHandles.job, JobObjectExtendedLimitInformation,
 				&jobExtendedLimits, sizeof(jobExtendedLimits), nullptr))
 			{
-				Internal::logger->Error(L"WinAPI error in " __FUNCTION__ " at line %d. QueryInformationJobObject failed error code %lu\n", 
+				Internal::logger->Error(L"WinAPI error in " __FUNCTION__ " at line %d. QueryInformationJobObject failed error code %lu\n",
 					__LINE__, GetLastError());
 
 				return false;
 			}
-			
+
 			jobExtendedLimits.BasicLimitInformation.LimitFlags |= JOB_OBJECT_LIMIT_PROCESS_MEMORY;
 			jobExtendedLimits.ProcessMemoryLimit = static_cast<SIZE_T>(1.5 * limits.memoryLimitKb * 1024); // 1.5X reserve;
 
@@ -323,7 +328,9 @@ namespace Internal
 		{
 			if (!SetTokenIntegrityLevel(hProcessCreationToken, SECURITY_MANDATORY_LOW_RID))// SECURITY_MANDATORY_UNTRUSTED_RID))
 			{
-				//log->LogWarning(L"can't set container process creation token security info");
+				Internal::logger->Error(L"WinAPI error in " __FUNCTION__ " at line %d. Can't set container process creation token security info. SetTokenIntegrityLevel failed error code %lu\n",
+					__LINE__, GetLastError());
+
 				SafeCloseHandle(&hProcessCreationToken);
 
 				return false;
@@ -333,24 +340,18 @@ namespace Internal
 		}
 		bool applyStartupAttribute(LPSTARTUPINFOEXW _startupInfoEx)
 		{
-			int res = GetLastError();
-
-
 			SIZE_T attributeListSize = 0;
 			InitializeProcThreadAttributeList(nullptr, 2, 0, &attributeListSize);
-			
-			res = GetLastError();
 
 			_startupInfoEx->lpAttributeList = (LPPROC_THREAD_ATTRIBUTE_LIST)malloc(attributeListSize);
 
 			if (!InitializeProcThreadAttributeList(_startupInfoEx->lpAttributeList, 2, 0, &attributeListSize))
 			{
-				//log->LogErrorLastSystemError(L"in " __FUNCTION__);
+				Internal::logger->Error(L"WinAPI error in " __FUNCTION__ " at line %d. InitializeProcThreadAttributeList failed error code %lu\n",
+					__LINE__, GetLastError());
 
 				return false;
 			}
-
-			res = GetLastError();
 
 			DWORD64 mitigationPolicy =
 				PROCESS_CREATION_MITIGATION_POLICY_DEP_ENABLE |
@@ -371,7 +372,8 @@ namespace Internal
 			if (!UpdateProcThreadAttribute(_startupInfoEx->lpAttributeList, 0, PROC_THREAD_ATTRIBUTE_MITIGATION_POLICY,
 				&mitigationPolicy, sizeof(mitigationPolicy), nullptr, nullptr))
 			{
-				//log->LogErrorLastSystemError(L"in " __FUNCTION__);
+				Internal::logger->Error(L"WinAPI error in " __FUNCTION__ " at line %d. UpdateProcThreadAttribute for PROC_THREAD_ATTRIBUTE_MITIGATION_POLICY failed error code %lu\n",
+					__LINE__, GetLastError());
 
 				DeleteProcThreadAttributeList(_startupInfoEx->lpAttributeList);
 				free(_startupInfoEx->lpAttributeList);
@@ -379,14 +381,13 @@ namespace Internal
 				return false;
 			}
 
-			res = GetLastError();
-
 #ifdef _WIN32_WINNT_WIN10
 			DWORD childProcessPolicy = PROCESS_CREATION_CHILD_PROCESS_RESTRICTED;
 			if (!UpdateProcThreadAttribute(_startupInfoEx->lpAttributeList, 0, PROC_THREAD_ATTRIBUTE_CHILD_PROCESS_POLICY,
 				&childProcessPolicy, sizeof(childProcessPolicy), nullptr, nullptr))
 			{
-				//log->LogErrorLastSystemError(L"in " __FUNCTION__);
+				Internal::logger->Error(L"WinAPI error in " __FUNCTION__ " at line %d. UpdateProcThreadAttribute for PROC_THREAD_ATTRIBUTE_CHILD_PROCESS_POLICY failed error code %lu\n",
+					__LINE__, GetLastError());
 
 				DeleteProcThreadAttributeList(_startupInfoEx->lpAttributeList);
 				free(_startupInfoEx->lpAttributeList);
@@ -394,7 +395,6 @@ namespace Internal
 				return false;
 			}
 #endif
-			res = GetLastError();
 
 			return true;
 		}
@@ -417,7 +417,8 @@ namespace Internal
 			if (!SetInformationJobObject(startupHandles.job, JobObjectBasicUIRestrictions,
 				&jobUILimits, sizeof(JOBOBJECT_BASIC_UI_RESTRICTIONS)))
 			{
-				//log->LogErrorLastSystemError(L"in " __FUNCTION__);
+				Internal::logger->Error(L"WinAPI error in " __FUNCTION__ " at line %d. Can't set UI restrinctions. SetInformationJobObject failed error code %lu\n",
+					__LINE__, GetLastError());
 
 				return false;
 			}
@@ -435,14 +436,14 @@ namespace Internal
 
 		DWORD startTime;
 		TestLib::UsedResources usedResources;
-		
+
 		struct
 		{
 			HANDLE input;
 			HANDLE output;
 			HANDLE error;
 		} IoHandles;
-		
+
 		struct
 		{
 			HANDLE process;
