@@ -21,13 +21,13 @@
     <ClCompile Include="WrapperTester.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\kostyanf14%40live.com\Desktop\TestLib\TestLib.Tester\Tester.Util.cpp">
+    <ClCompile Include="Logger.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\kostyanf14%40live.com\Desktop\TestLib\TestLib.Tester\Utils.cpp">
+    <ClCompile Include="Tester.Util.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\kostyanf14%40live.com\Desktop\TestLib\TestLib.Tester\Logger.cpp">
+    <ClCompile Include="Utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -35,10 +35,10 @@
     <ClInclude Include="Tester.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\kostyanf14%40live.com\Desktop\TestLib\TestLib.Tester\Logger.h">
+    <ClInclude Include="Logger.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\kostyanf14%40live.com\Desktop\TestLib\TestLib.Tester\Types.h">
+    <ClInclude Include="Types.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
