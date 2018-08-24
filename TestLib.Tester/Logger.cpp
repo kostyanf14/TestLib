@@ -4,6 +4,11 @@ namespace Internal
 {
 	Logger * logger = nullptr;;
 
+/*
+varargs not supported under /clr
+internal logger calls only at native code
+*/
+#pragma warning(disable: 4793)
 	void Logger::Debug(wchar_t * format, ...)
 	{
 		if (!log)
@@ -65,4 +70,5 @@ namespace Internal
 
 		log(*this, 4u, buffer, userData);
 	}
+#pragma warning(default: 4793) 
 }
