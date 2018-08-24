@@ -32,9 +32,6 @@ namespace TestLib.Worker
 			logger.Info("TestLib.Worker started");
 			loggerManaged.InitNativeLogger(new LoggerManaged.LogEventHandler(logger.Log));
 
-			loggerManaged.Check();
-
-
 			HttpCodelabsApiClient client = new HttpCodelabsApiClient();
 			CancellationTokenSource cancellationToken = new CancellationTokenSource();
 
@@ -55,7 +52,6 @@ namespace TestLib.Worker
 					Thread.Sleep(app.Configuration.GetSubmissionDelayMs);
 					continue;
 				}
-				loggerManaged.Check();
 
 				var submission = submissions.First();
 				if (!client.TakeSubmissions(submission.Id))
@@ -77,7 +73,6 @@ namespace TestLib.Worker
 
 
 				Worker worker = new Worker(1);
-				loggerManaged.Check();
 				if (worker.Testing(submission, problem, solution))
 					client.ReleaseSubmissions(submission.Id);
 				else

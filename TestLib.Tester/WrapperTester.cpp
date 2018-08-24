@@ -40,7 +40,7 @@ namespace TestLib
 			nativeHandler(new NativeLogCallbackHandler(this))
 		{ }
 
-		/*~LoggerManaged()
+		~LoggerManaged()
 		{
 			this->!LoggerManaged();
 		}
@@ -52,7 +52,7 @@ namespace TestLib
 
 			delete nativeHandler;
 			nativeHandler = nullptr;
-		}*/
+		}
 
 		void Destroy()
 		{
@@ -70,16 +70,6 @@ namespace TestLib
 			Internal::logger = this->GetNative();
 			Internal::logger->Debug(L"Check native log from " __FUNCTIONW__);
 		}
-
-
-		void Check()
-		{
-			void * a = Internal::logger;
-			assert(a != nullptr);
-		}
-		/*IntPtr^ Pinned() {
-			return gcnew IntPtr(this);
-		}*/
 
 		event LogEventHandler^ Log
 		{
