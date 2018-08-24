@@ -270,7 +270,7 @@ namespace Internal
 			}
 		}
 
-		bool Run(bool isSolution = false);
+		bool Run(bool useRestrictions = false);
 		bool Wait();
 		void CloseIoRedirectionHandles();
 

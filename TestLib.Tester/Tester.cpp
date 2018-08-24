@@ -2,7 +2,7 @@
 
 namespace Internal
 {
-	bool Tester::Run(bool isSolution)
+	bool Tester::Run(bool useRestrictions)
 	{
 		Internal::logger->Debug(L"Called " __FUNCTIONW__ );
 
@@ -43,7 +43,7 @@ namespace Internal
 			startupInfoEx.StartupInfo.hStdError = IoHandles.error;
 		}
 
-		if (isSolution)
+		if (useRestrictions)
 		{
 			applyMandatoryLevel(hProcessCreationToken);
 			applyMemoryLimit();

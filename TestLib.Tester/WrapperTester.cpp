@@ -189,9 +189,9 @@ namespace TestLib
 			return gcnew IntPtr(tester->GetIORedirectedHandle(_handleType));
 		}
 
-		Boolean Run(Boolean _isSolution)
+		Boolean Run(Boolean _useRestrictions)
 		{
-			return tester->Run(_isSolution);
+			return tester->Run(_useRestrictions);
 		}
 		Boolean Run()
 		{
