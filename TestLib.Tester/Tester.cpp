@@ -145,7 +145,7 @@ namespace Internal
 			usedResources.realTimeUsageMs = limits.realTimeLimitMs + 1;
 			usedResources.processExitCode = WAIT_TIMEOUT;
 
-			Internal::logger->Error(L"Can't start program w/o program name or workdirectory. workDirectory = '%s', program = '%s'", workDirectory, program);
+			Internal::logger->Error(L"Waiting program timeout expired. workDirectory = '%s', program = '%s'", workDirectory, program);
 			break;
 		case WAIT_FAILED:
 			TerminateProcess(startupHandles.process, -1);
@@ -157,21 +157,20 @@ namespace Internal
 
 			usedResources.processExitCode = -1;
 
-			Internal::logger->Error(L"Can't start program w/o program name or workdirectory. workDirectory = '%s', program = '%s'", workDirectory, program);
+			Internal::logger->Error(L"Waiting program failed. workDirectory = '%s', program = '%s'", workDirectory, program);
 			break;
 
 		case WAIT_OBJECT_0:
 			GetExitCodeProcess(startupHandles.process, &usedResources.processExitCode);
+			Internal::logger->Info(L"Program waited successfully. workDirectory = '%s', program = '%s'", workDirectory, program);
 			break;
 
 		default:
-			Internal::logger->Error(L"Can't start program w/o program name or workdirectory. workDirectory = '%s', program = '%s'", workDirectory, program);
-
-			//log->LogErrorLastSystemError(L"Error waiting process. Unknown status.");
+			Internal::logger->Error(L"Error waiting process. Unknown status. status = %u, workDirectory = '%s', program = '%s'", waitCode, workDirectory, program);
 			break;
 		}
 
-		usedResources.realTimeUsageMs = static_cast<uint16>(GetTickCount() - startTime);
+		usedResources.realTimeUsageMs = static_cast<uint32>(GetTickCount() - startTime);
 
 		if (startupHandles.job != INVALID_HANDLE_VALUE)
 		{
@@ -185,7 +184,7 @@ namespace Internal
 			}
 			else
 			{
-				usedResources.cpuWorkTimeMs = static_cast<uint16>
+				usedResources.cpuWorkTimeMs = static_cast<uint32>
 					((basicAccountingInfo.TotalKernelTime.QuadPart + basicAccountingInfo.TotalUserTime.QuadPart) / 10000);
 			}
 

@@ -151,7 +151,11 @@ namespace Internal
 		bool RedirectIOHandleToFile(TestLib::IOHandleType _handleType, const wchar_t * _fileName)
 		{
 			if (_fileName == nullptr)
-				throw "ArgumentNullException " nameof(_handle);
+			{
+				Internal::logger->Error(__FUNCTION__ L"ArgumentNullException " nameof(_fileName) "\n");
+
+				throw "ArgumentNullException " nameof(_fileName);
+			}
 
 			SECURITY_ATTRIBUTES attr;
 			attr.nLength = sizeof(SECURITY_ATTRIBUTES);
@@ -178,14 +182,20 @@ namespace Internal
 				break;
 				*/
 			default:
-				//LogError(L"IOHandleType incorrect _handleType = %hhu", (uint8)_handleType);
+				Internal::logger->Error(__FUNCTION__ L"IOHandleType incorrect _handleType = %hhu\n",
+					(uint8)_handleType);
+
 				return false;
-
-
 			}
 
 			HANDLE h = CreateFileW(_fileName, rwMode, 0, &attr, openMode, FILE_ATTRIBUTE_NORMAL, nullptr);
-			//TODO: add check h, add loging
+			if (h == INVALID_HANDLE_VALUE)
+			{
+				Internal::logger->Error(L"WinAPI error in " __FUNCTION__ " at line %d. CreateFileW failed error code %lu. File name = %S\n",
+					__LINE__, GetLastError(), _fileName);
+
+				return false;
+			}
 
 			switch (_handleType)
 			{
@@ -202,7 +212,8 @@ namespace Internal
 				IoHandles.error = h;
 				break;
 			default:
-				//log->LogError(L"IOHandleType incorrect _handleType = %hhu", (uint8)_handleType);
+				Internal::logger->Error(__FUNCTION__ L"IOHandleType incorrect _handleType = %hhu\n",
+					(uint8)_handleType);
 				return false;
 			}
 
@@ -212,7 +223,11 @@ namespace Internal
 		bool RedirectIOHandleToHandle(TestLib::IOHandleType _handleType, void * _handle, bool _duplicate)
 		{
 			if (_handle == nullptr)
+			{
+				Internal::logger->Error(__FUNCTION__ L"ArgumentNullException " nameof(_handle) "\n");
+
 				throw "ArgumentNullException " nameof(_handle);
+			}
 
 			PHANDLE h;
 
@@ -231,7 +246,8 @@ namespace Internal
 				h = &IoHandles.error;
 				break;
 			default:
-				//log->LogError(L"IOHandleType incorrect _handleType = %hhu", (uint8)_handleType);
+				Internal::logger->Error(__FUNCTION__ L"IOHandleType incorrect _handleType = %hhu\n",
+					(uint8)_handleType);
 				return false;
 
 			}
@@ -241,7 +257,8 @@ namespace Internal
 				if (!DuplicateHandle(GetCurrentProcess(), _handle, GetCurrentProcess(), h,
 					0, TRUE, DUPLICATE_SAME_ACCESS))
 				{
-					//log->LogErrorLastSystemError(L"RedirectIOHandleToHandle -> DuplicateHandle error");
+					Internal::logger->Error(L"WinAPI error in " __FUNCTION__ " at line %d. DuplicateHandle failed error code %lu\n",
+						__LINE__, GetLastError());
 
 					return false;
 				}
