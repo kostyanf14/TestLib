@@ -123,15 +123,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\kostyanf14%40live.com\Desktop\TestLib\TestLib.Tester\Logger.cpp" />
-    <ClCompile Include="..\..\..\..\kostyanf14%40live.com\Desktop\TestLib\TestLib.Tester\Tester.Util.cpp" />
-    <ClCompile Include="..\..\..\..\kostyanf14%40live.com\Desktop\TestLib\TestLib.Tester\Utils.cpp" />
+    <ClCompile Include="Logger.cpp" />
+    <ClCompile Include="Tester.Util.cpp" />
+    <ClCompile Include="Utils.cpp" />
     <ClCompile Include="Tester.cpp" />
     <ClCompile Include="WrapperTester.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\..\kostyanf14%40live.com\Desktop\TestLib\TestLib.Tester\Logger.h" />
-    <ClInclude Include="..\..\..\..\kostyanf14%40live.com\Desktop\TestLib\TestLib.Tester\Types.h" />
+    <ClInclude Include="Logger.h" />
+    <ClInclude Include="Types.h" />
     <ClInclude Include="Tester.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
