@@ -1,7 +1,6 @@
 ﻿using NLog;
 using System;
 using System.Collections.Specialized;
-using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
@@ -13,17 +12,22 @@ using TestLib.Worker.ClientApi;
 
 namespace TestLib.Worker
 {
-	class Slot
-	{
-
-	}
-
 	class Program
 	{
-		static string WorkerName = "Worker teachk23";
-		static int SlotCount = 4;
-
 		static Logger logger = LogManager.GetCurrentClassLogger();
+
+		static void SendResults(CancellationToken token)
+		{
+			IApiClient client = new HttpCodelabsApiClient();
+			Application app = Application.Get();
+
+			while (!token.IsCancellationRequested)
+			{
+				var result = app.TestingResults.Dequeue();
+				client.SendTestingResult(result);
+			}
+		}
+
 		static void Main(string[] args)
 		{
 			Application app = Application.Get();
@@ -32,59 +36,30 @@ namespace TestLib.Worker
 			logger.Info("TestLib.Worker started");
 			loggerManaged.InitNativeLogger(new LoggerManaged.LogEventHandler(logger.Log));
 
-			HttpCodelabsApiClient client = new HttpCodelabsApiClient();
-			CancellationTokenSource cancellationToken = new CancellationTokenSource();
+			CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
+			Task[] workerTasks = new Task[app.Configuration.WorkerSlotCount + 1];
 
-			Task.Run(() =>
+			workerTasks[0] = 
+				Task.Run(() => { SendResults(cancellationTokenSource.Token); }, cancellationTokenSource.Token);
+
+			for (uint i = 1; i <= app.Configuration.WorkerSlotCount; i++)
+				workerTasks[i] = 
+					Task.Run(() => { new Slot(i, cancellationTokenSource.Token).Do(); }, cancellationTokenSource.Token);
+
+			for (; ; )
 			{
-				while (!cancellationToken.IsCancellationRequested)
+				var cmd = Console.ReadLine();
+
+				if (cmd == "exit")
 				{
-					var x = app.TestingResults.Dequeue();
-					client.SendTestingResult(x);
+					cancellationTokenSource.Cancel();
+					break;
 				}
-			}, cancellationToken.Token);
-
-			while (!cancellationToken.IsCancellationRequested)
-			{
-				var submissions = client.GetSuitableSubmissions(app.Compilers.GetCompilers());
-				if (!submissions.Any())
-				{
-					Thread.Sleep(app.Configuration.GetSubmissionDelayMs);
-					continue;
-				}
-
-				var submission = submissions.First();
-				if (!client.TakeSubmissions(submission.Id))
-					continue;
-				logger.Info("Testing slot {0} taken submission with id {1}", 1, submission.Id);
-				logger.Debug("Submission: {0}", submission);
-
-				ProblemFile solution = client.DownloadSolution(submission);
-				app.FileProvider.SaveFile(solution);
-
-				Problem problem = null;
-				if (!app.Problems.CheckProblem(submission.ProblemId, submission.ProblemUpdatedAt))
-				{
-					logger.Debug("Need download problem with id {0}", submission.ProblemId);
-					app.Problems.AddProblem(problem = client.DownloadProblem(submission.ProblemId));
-				}
-				else
-					problem = app.Problems.GetProblem(submission.ProblemId);
-
-
-				Worker worker = new Worker(1);
-				if (worker.Testing(submission, problem, solution))
-					client.ReleaseSubmissions(submission.Id);
-				else
-					client.FailSubmissions(submission.Id);
-
-				var z = loggerManaged.AsJson().ToString();
-				System.Console.WriteLine(z);
-
 			}
 
-			loggerManaged.Destroy();
+			Task.WaitAll(workerTasks);
 
+			loggerManaged.Destroy();
 		}
 	}
 }
