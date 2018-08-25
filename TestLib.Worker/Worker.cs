@@ -103,7 +103,7 @@ namespace TestLib.Worker
 				tester.SetProgram(program, $"\"{program}\" {args}");
 
 				tester.SetWorkDirectory(workdir);
-				tester.SetRealTimeLimit(Application.Get().Configuration.CompilersRealTimeLimit);
+				tester.SetRealTimeLimit(compiler.CompilersRealTimeLimit);
 				tester.RedirectIOHandleToFile(IOHandleType.Output, compilerLogFullPath);
 				tester.RedirectIOHandleToHandle(IOHandleType.Error, tester.GetIORedirectedHandle(IOHandleType.Output));
 
