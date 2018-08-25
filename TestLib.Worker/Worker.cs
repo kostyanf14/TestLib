@@ -107,7 +107,7 @@ namespace TestLib.Worker
 				tester.RedirectIOHandleToFile(IOHandleType.Output, compilerLogFullPath);
 				tester.RedirectIOHandleToHandle(IOHandleType.Error, tester.GetIORedirectedHandle(IOHandleType.Output));
 
-				if (tester.Run(!isChecker))
+				if (tester.Run(false))
 					logger.Info("Slot {0}: Compiler run successfully", slotNum);
 				else
 				{
@@ -184,7 +184,7 @@ namespace TestLib.Worker
 					   compilerLogFullPath: compilerLogFullPath
 				   );
 
-			return compile(workdir, compiler, replacement, compilerLogFullPath, true);
+			return compile(workdir, compiler, replacement, compilerLogFullPath, false);
 		}
 
 		public bool Testing(Submission submission, Problem problem, ProblemFile solution)
