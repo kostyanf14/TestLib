@@ -265,7 +265,6 @@ namespace TestLib.Worker
 						Application.Get().TestingResults.Enqueue(testResult);
 
 						logger.Error("Slot {0}: Can't run solution", slotNum);
-						//Log Win32Error
 						return false;
 					}
 
@@ -277,7 +276,6 @@ namespace TestLib.Worker
 						Application.Get().TestingResults.Enqueue(testResult);
 
 						logger.Error("Slot {0}: Wait failed", slotNum);
-						//Log Win32Error
 						return false;
 					}
 
@@ -290,7 +288,6 @@ namespace TestLib.Worker
 						Application.Get().TestingResults.Enqueue(testResult);
 
 						logger.Error("Slot {0}: Solution exit with code {1}", slotNum, exitCode);
-						//Log Win32Error
 						return false;
 					}
 
@@ -335,7 +332,6 @@ namespace TestLib.Worker
 						Application.Get().TestingResults.Enqueue(testResult);
 
 						logger.Error("Slot {0}: Can't run checker", slotNum);
-						//Log Win32Error
 						return false;
 					}
 
@@ -347,7 +343,6 @@ namespace TestLib.Worker
 						Application.Get().TestingResults.Enqueue(testResult);
 
 						logger.Error("Slot {0}: Wait failed", slotNum);
-						//Log Win32Error
 						return false;
 					}
 
