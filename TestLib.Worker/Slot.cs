@@ -14,6 +14,8 @@ namespace TestLib.Worker
 			this.slotNumber = slotNumber;
 			this.token = token;
 			client = new HttpCodelabsApiClient();
+
+			logger.Info("Slot {0} created", slotNumber);
 		}
 
 		public void Do()
@@ -32,7 +34,8 @@ namespace TestLib.Worker
 				var submission = submissions.First();
 				if (!client.TakeSubmissions(submission.Id))
 					continue;
-				logger.Info("Testing slot {0} taken submission with id {1}", 1, submission.Id);
+
+				logger.Info("Testing slot {0} taken submission with id {1}", slotNumber, submission.Id);
 				logger.Debug("Submission: {0}", submission);
 
 				ProblemFile solution = client.DownloadSolution(submission);
@@ -53,6 +56,8 @@ namespace TestLib.Worker
 				else
 					client.FailSubmissions(submission.Id);
 			}
+
+			token.ThrowIfCancellationRequested();
 		}
 
 		uint slotNumber;
