@@ -99,6 +99,12 @@ namespace Internal
 			SafeCloseHandle(&IoHandles.output);
 			//SafeCloseHandle(&IoHandles.error);
 
+			HANDLE curr = GetCurrentProcess();
+			if (startupHandles.process == curr)
+			{
+				throw "startupHandles.process is current process";
+			}
+
 			TerminateProcess(startupHandles.process, 0);
 			//SafeCloseHandle(&startupHandles.process);
 			//SafeCloseHandle(&startupHandles.thread);
