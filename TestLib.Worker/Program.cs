@@ -12,6 +12,7 @@ using TestLib.Worker.ClientApi;
 
 namespace TestLib.Worker
 {
+
 	class Program
 	{
 		static Logger logger = LogManager.GetCurrentClassLogger();
@@ -21,11 +22,18 @@ namespace TestLib.Worker
 			IApiClient client = new HttpCodelabsApiClient();
 			Application app = Application.Get();
 
+			token.Register(() => { app.TestingResults.Enqueue(null); });
+
 			while (!token.IsCancellationRequested)
 			{
 				var result = app.TestingResults.Dequeue();
+				if (result is null)
+					break;
+
 				client.SendTestingResult(result);
 			}
+
+			token.ThrowIfCancellationRequested();
 		}
 
 		static void Main(string[] args)
@@ -34,16 +42,16 @@ namespace TestLib.Worker
 			LoggerManaged loggerManaged = new LoggerManaged();
 
 			logger.Info("TestLib.Worker started");
-			loggerManaged.InitNativeLogger(new LoggerManaged.LogEventHandler(logger.Log));
+			loggerManaged.InitNativeLogger(new LoggerManaged.LogEventHandler(LogManager.GetLogger("Internal").Log));
 
 			CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
 			Task[] workerTasks = new Task[app.Configuration.WorkerSlotCount + 1];
 
-			workerTasks[0] = 
+			workerTasks[0] =
 				Task.Run(() => { SendResults(cancellationTokenSource.Token); }, cancellationTokenSource.Token);
 
 			for (uint i = 1; i <= app.Configuration.WorkerSlotCount; i++)
-				workerTasks[i] = 
+				workerTasks[i] =
 					Task.Run(() => { new Slot(i, cancellationTokenSource.Token).Do(); }, cancellationTokenSource.Token);
 
 			for (; ; )
@@ -57,8 +65,10 @@ namespace TestLib.Worker
 				}
 			}
 
-			Task.WaitAll(workerTasks);
+			try { Task.WaitAll(workerTasks); }
+			catch { }
 
+			cancellationTokenSource.Dispose();
 			loggerManaged.Destroy();
 		}
 	}
