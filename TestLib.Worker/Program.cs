@@ -22,7 +22,7 @@ namespace TestLib.Worker
 			IApiClient client = new HttpCodelabsApiClient();
 			Application app = Application.Get();
 
-			token.Register(() => { app.TestingResults.Enqueue(null); });
+			token.Register(() => app.TestingResults.Enqueue(null));
 
 			while (!token.IsCancellationRequested)
 			{
@@ -48,11 +48,11 @@ namespace TestLib.Worker
 			Task[] workerTasks = new Task[app.Configuration.WorkerSlotCount + 1];
 
 			workerTasks[0] =
-				Task.Run(() => { SendResults(cancellationTokenSource.Token); }, cancellationTokenSource.Token);
+				Task.Run(() => SendResults(cancellationTokenSource.Token), cancellationTokenSource.Token);
 
 			for (uint i = 1; i <= app.Configuration.WorkerSlotCount; i++)
 				workerTasks[i] =
-					Task.Run(() => { new Slot(i, cancellationTokenSource.Token).Do(); }, cancellationTokenSource.Token);
+					Task.Run(() => new Slot(i, cancellationTokenSource.Token).Do(), cancellationTokenSource.Token);
 
 			for (; ; )
 			{
