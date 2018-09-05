@@ -177,7 +177,7 @@ namespace Internal
 			case TestLib::IOHandleType::Output:
 			case TestLib::IOHandleType::Error:
 				rwMode = GENERIC_WRITE;
-				openMode = OPEN_ALWAYS;
+				openMode = CREATE_ALWAYS;
 				break;
 				/*case RedirectFileHandleMode::Rewrite:
 				rwMode = GENERIC_WRITE;
