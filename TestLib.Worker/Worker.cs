@@ -218,7 +218,7 @@ namespace TestLib.Worker
 				testResult.SubmissionId = submission.Id;
 				testResult.TestId = problem.Tests[0].Id;
 				testResult.Result = TestingResult.CompilerError;
-				testResult.CompilerLog = File.ReadAllText(compilerLogFileFullPath);
+				testResult.Log = File.ReadAllText(compilerLogFileFullPath);
 
 				Application.Get().TestingResults.Enqueue(testResult);
 				return true;
