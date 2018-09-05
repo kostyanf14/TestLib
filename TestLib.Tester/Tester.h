@@ -99,15 +99,12 @@ namespace Internal
 			SafeCloseHandle(&IoHandles.output);
 			//SafeCloseHandle(&IoHandles.error);
 
-			HANDLE curr = GetCurrentProcess();
-			if (startupHandles.process == curr)
+			if (startupHandles.process != INVALID_HANDLE_VALUE)
 			{
-				throw "startupHandles.process is current process";
+				TerminateProcess(startupHandles.process, 0);
+				//SafeCloseHandle(&startupHandles.process);
+				//SafeCloseHandle(&startupHandles.thread);
 			}
-
-			TerminateProcess(startupHandles.process, 0);
-			//SafeCloseHandle(&startupHandles.process);
-			//SafeCloseHandle(&startupHandles.thread);
 
 			TerminateJobObject(startupHandles.job, 0);
 			//SafeCloseHandle(&startupHandles.job);
