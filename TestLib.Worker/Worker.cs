@@ -261,13 +261,14 @@ namespace TestLib.Worker
 						logger.Info("Slot {0}: Solution run successfully", slotNum);
 					else
 					{
-						testResult.Result = TestingResult.RunTimeError;
+						testResult.Result = TestingResult.TestingError;
 						Application.Get().TestingResults.Enqueue(testResult);
 
 						logger.Error("Slot {0}: Can't run solution", slotNum);
 						return false;
 					}
 
+                    //TODO: Time OUT
 					if (tester.Wait())
 						logger.Info("Slot {0}: Waiting started", slotNum);
 					else
@@ -288,7 +289,7 @@ namespace TestLib.Worker
 						Application.Get().TestingResults.Enqueue(testResult);
 
 						logger.Error("Slot {0}: Solution exit with code {1}", slotNum, exitCode);
-						return false;
+						return true;
 					}
 
 					solutionUsedResources = tester.GetUsedResources();
@@ -320,15 +321,15 @@ namespace TestLib.Worker
 
 					tester.SetWorkDirectory(workdir);
 					tester.SetRealTimeLimit(60 * 1000);
-					tester.RedirectIOHandleToFile(IOHandleType.Output, reportFileFullPath);
-					tester.RedirectIOHandleToHandle(IOHandleType.Error, tester.GetIORedirectedHandle(IOHandleType.Output));
+					//tester.RedirectIOHandleToFile(IOHandleType.Output, reportFileFullPath);
+					//tester.RedirectIOHandleToHandle(IOHandleType.Error, tester.GetIORedirectedHandle(IOHandleType.Output));
 
 					logger.Info("Slot {0}: Run checker", slotNum);
 					if (tester.Run())
 						logger.Info("Slot {0}: Checker run successfully", slotNum);
 					else
 					{
-						testResult.Result = TestingResult.RunTimeError;
+						testResult.Result = TestingResult.TestingError;
 						Application.Get().TestingResults.Enqueue(testResult);
 
 						logger.Error("Slot {0}: Can't run checker", slotNum);
@@ -339,7 +340,7 @@ namespace TestLib.Worker
 						logger.Info("Slot {0}: Waiting started", slotNum);
 					else
 					{
-						testResult.Result = TestingResult.RunTimeError;
+						testResult.Result = TestingResult.TestingError;
 						Application.Get().TestingResults.Enqueue(testResult);
 
 						logger.Error("Slot {0}: Wait failed", slotNum);
