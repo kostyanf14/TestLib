@@ -12,11 +12,11 @@ namespace TestLib.Worker
 {
 	public static class StringConvertionExtension
 	{
-		public static Int32 ToInt32OrDefault(this string value, Int32 defaultValue = 0) =>
-			 Int32.TryParse(value, out Int32 result) ? result : defaultValue;
+		public static int ToInt32OrDefault(this string value, int defaultValue = 0) =>
+             int.TryParse(value, out int result) ? result : defaultValue;
 
-		public static UInt32 ToUInt32OrDefault(this string value, UInt32 defaultValue = 0) =>
-			 UInt32.TryParse(value, out UInt32 result) ? result : defaultValue;
+		public static uint ToUInt32OrDefault(this string value, uint defaultValue = 0) =>
+             uint.TryParse(value, out uint result) ? result : defaultValue;
 	}
 
 	internal sealed class Application
