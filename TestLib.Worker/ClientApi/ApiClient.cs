@@ -170,7 +170,7 @@ namespace TestLib.Worker.ClientApi
 
 			if (responseMessage.StatusCode != HttpStatusCode.NoContent)
 				logger.Error("Sending testing result failed. Server error message: {0}",
-					responseMessage.RequestMessage.Content?.ReadAsStringAsync()?.Result);
+					responseMessage.Content?.ReadAsStringAsync()?.Result);
 
 			return responseMessage.StatusCode == HttpStatusCode.NoContent;
 		}
