@@ -23,7 +23,7 @@ namespace TestLib.Worker.ClientApi
 			client = new HttpClient();
 
 			client.DefaultRequestHeaders.Accept.Clear();
-			client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("*/*"));
+			client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             client.DefaultRequestHeaders.ConnectionClose = false;
 
             //client.Headers.Add(HttpRequestHeader.Accept, "*/*");
