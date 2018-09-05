@@ -24,9 +24,11 @@ namespace TestLib.Worker.ClientApi
 
 			client.DefaultRequestHeaders.Accept.Clear();
 			client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("*/*"));
-			//client.Headers.Add(HttpRequestHeader.Accept, "*/*");
+            client.DefaultRequestHeaders.ConnectionClose = false;
 
-			logger.Info("ApiClient initialized");
+            //client.Headers.Add(HttpRequestHeader.Accept, "*/*");
+
+            logger.Info("ApiClient initialized");
 		}
 
 		private IEnumerable<Submission> readSubmissions(HashSet<byte> compilers = null)
@@ -173,7 +175,8 @@ namespace TestLib.Worker.ClientApi
 			return responseMessage.StatusCode == HttpStatusCode.NoContent;
 		}
 
-		private string buildEndpoint(string method, ulong? id = null, string action = null, string parameters = null)
+
+        private string buildEndpoint(string method, ulong? id = null, string action = null, string parameters = null)
 		{
 			string endpoint = $"{Application.Get().Configuration.BaseApiAddress}/{method}";
 
