@@ -61,6 +61,8 @@
   <ItemGroup>
     <Compile Include="ClientApi\ApiClient.cs" />
     <Compile Include="ClientApi\ICodelabsApiClient.cs" />
+    <Compile Include="ClientApi\Models\RequestMessage.cs" />
+    <Compile Include="ClientApi\Models\SubmissionLog.cs" />
     <Compile Include="ObjectExtensions.cs" />
     <Compile Include="ClientApi\Models\Submission.cs" />
     <Compile Include="Application.cs" />

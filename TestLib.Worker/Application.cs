@@ -34,13 +34,13 @@ namespace TestLib.Worker
 			Compilers = new CompilerManager(config.Get("compilers_config_folder") ?? ".\\compilers\\");
 
 			Problems = new ProblemCache(config.Get("problems_cache_size").ToUInt32OrDefault(1));
-			TestingResults = new BlockingQueue<TestResult>(config.Get("testing_result_sending_cache_size").ToUInt32OrDefault(2048));
+			Requests = new BlockingQueue<RequestMessage>(config.Get("result_sending_cache_size").ToUInt32OrDefault(2048));
 
 			Configuration = new Configuration(config);
 		}
 		public FileProvider FileProvider { get; private set; }
 		public ProblemCache Problems { get; private set; }
-		public BlockingQueue<TestResult> TestingResults { get; private set; }
+		public BlockingQueue<RequestMessage> Requests { get; private set; }
 		public CompilerManager Compilers { get; private set; }
 
 		public Configuration Configuration { get; private set; }

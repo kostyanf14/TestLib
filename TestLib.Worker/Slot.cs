@@ -32,7 +32,7 @@ namespace TestLib.Worker
 				}
 
 				var submission = submissions.First();
-				if (!client.TakeSubmissions(submission.Id))
+				if (!client.SendRequest(client.GetTakeSubmissionsRequestMessage(submission.Id)))
 					continue;
 
 				logger.Info("Testing slot {0} taken submission with id {1}", slotNumber, submission.Id);
@@ -50,11 +50,11 @@ namespace TestLib.Worker
 				else
 					problem = app.Problems.GetProblem(submission.ProblemId);
 
-				Worker worker = new Worker(slotNumber);
+				Worker worker = new Worker(slotNumber, client);
 				if (worker.Testing(submission, problem, solution))
-					client.ReleaseSubmissions(submission.Id);
+					app.Requests.Enqueue(client.GetReleaseSubmissionsRequestMessage(submission.Id));
 				else
-					client.FailSubmissions(submission.Id);
+                    app.Requests.Enqueue(client.GetFailSubmissionsRequestMessage(submission.Id));
 			}
 
 			token.ThrowIfCancellationRequested();

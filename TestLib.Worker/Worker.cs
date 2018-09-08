@@ -1,368 +1,429 @@
-﻿using Newtonsoft.Json.Linq;
-using NLog;
+﻿using NLog;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
+using TestLib.Worker.ClientApi;
 using TestLib.Worker.ClientApi.Models;
 
 namespace TestLib.Worker
 {
-	class Worker
-	{
-		static readonly Logger logger;
-		static readonly Regex re;
+    internal class Worker
+    {
+        private static readonly Logger logger;
+        private static readonly Regex re;
+        private static readonly string compilerLogFilename;
+        private static readonly string checkerBinaryFilename;
+        private static readonly string solutionBinaryFilename;
 
-		static readonly string compilerLogFilename;
-		static readonly string checkerBinaryFilename;
-		static readonly string solutionBinaryFilename;
+        private readonly uint slotNum = 0;
+        private readonly IApiClient apiClient;
 
-		uint slotNum = 0;
+        static Worker()
+        {
+            logger = LogManager.GetCurrentClassLogger();
+            re = new Regex(@"\$\((\w+)\)", RegexOptions.Compiled);
 
-		static Worker()
-		{
-			logger = LogManager.GetCurrentClassLogger();
-			re = new Regex(@"\$\((\w+)\)", RegexOptions.Compiled);
+            compilerLogFilename = "compiler.log";
+            checkerBinaryFilename = "checker.exe";
+            solutionBinaryFilename = "solution.exe";
+        }
 
-			compilerLogFilename = "compiler.log";
-			checkerBinaryFilename = "checker.exe";
-			solutionBinaryFilename = "solution.exe";
-		}
+        public Worker(uint slotNum, IApiClient client)
+        {
+            this.slotNum = slotNum;
+            apiClient = client;
+        }
 
-		public Worker(uint slotNum)
-		{
-			this.slotNum = slotNum;
-		}
+        private Dictionary<string, string> GenerateReplacementDictionary(string workDirecrory,
+            string binaryFilename, string binaryFullPath,
+            string sourceFilename = null, string sourceFullPath = null,
+            string compilerLogFilename = null, string compilerLogFullPath = null,
+            string inputFileName = null, string inputFilePath = null,
+            string outputFileName = null, string outputFilePath = null,
+            string answerFileName = null, string answerFilePath = null,
+            string reportFileName = null, string reportFilePath = null)
+        {
+            var replacement = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        {"$(BinaryFullPath)", binaryFullPath },
+                        {"$(BinaryFilename)", binaryFilename },
+                        {"$(WorkDirecrory)", workDirecrory },
+                    };
 
-		Dictionary<string, string> GenerateReplacementDictionary(string workDirecrory,
-			string binaryFilename, string binaryFullPath,
-			string sourceFilename = null, string sourceFullPath = null,
-			string compilerLogFilename = null, string compilerLogFullPath = null,
-			string inputFileName = null, string inputFilePath = null,
-			string outputFileName = null, string outputFilePath = null,
-			string answerFileName = null, string answerFilePath = null,
-			string reportFileName = null, string reportFilePath = null)
-		{
-			var replacement = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-					{
-						{"$(BinaryFullPath)", binaryFullPath },
-						{"$(BinaryFilename)", binaryFilename },
-						{"$(WorkDirecrory)", workDirecrory },
-					};
+            if (compilerLogFullPath != null)
+            {
+                replacement.Add("$(SourceFilename)", sourceFilename);
+                replacement.Add("$(SourceFilenameWithOutExtention)", sourceFilename.Remove(sourceFilename.Length - 4, 4));
+                //SourceFilenameWithOutExtention
+            }
+            if (compilerLogFilename != null)
+            {
+                replacement.Add("$(SourceFullPath)", sourceFullPath);
+            }
 
-			if (compilerLogFullPath != null)
-			{
-				replacement.Add("$(SourceFilename)", sourceFilename);
-				replacement.Add("$(SourceFilenameWithOutExtention)", sourceFilename.Remove(sourceFilename.Length - 4, 4));
-				//SourceFilenameWithOutExtention
-			}
-			if (compilerLogFilename != null)
-				replacement.Add("$(SourceFullPath)", sourceFullPath);
+            if (compilerLogFilename != null)
+            {
+                replacement.Add("$(CompilerLogFilename)", compilerLogFilename);
+            }
 
-			if (compilerLogFilename != null)
-				replacement.Add("$(CompilerLogFilename)", compilerLogFilename);
-			if (compilerLogFullPath != null)
-				replacement.Add("$(CompilerLogFullPath)", compilerLogFullPath);
+            if (compilerLogFullPath != null)
+            {
+                replacement.Add("$(CompilerLogFullPath)", compilerLogFullPath);
+            }
 
-			if (inputFileName != null)
-				replacement.Add("$(InputFileName)", inputFileName);
-			if (inputFilePath != null)
-				replacement.Add("$(InputFilePath)", inputFilePath);
+            if (inputFileName != null)
+            {
+                replacement.Add("$(InputFileName)", inputFileName);
+            }
 
-			if (outputFileName != null)
-				replacement.Add("$(OutputFileName)", outputFileName);
-			if (outputFilePath != null)
-				replacement.Add("$(OutputFilePath)", outputFilePath);
+            if (inputFilePath != null)
+            {
+                replacement.Add("$(InputFilePath)", inputFilePath);
+            }
 
-			if (answerFileName != null)
-				replacement.Add("$(AnswerFileName)", answerFileName);
-			if (answerFilePath != null)
-				replacement.Add("$(AnswerFilePath)", answerFilePath);
+            if (outputFileName != null)
+            {
+                replacement.Add("$(OutputFileName)", outputFileName);
+            }
 
-			if (reportFileName != null)
-				replacement.Add("$(ReportFileName)", reportFileName);
-			if (reportFilePath != null)
-				replacement.Add("$(ReportFilePath)", reportFilePath);
+            if (outputFilePath != null)
+            {
+                replacement.Add("$(OutputFilePath)", outputFilePath);
+            }
 
-			return replacement;
-		}
+            if (answerFileName != null)
+            {
+                replacement.Add("$(AnswerFileName)", answerFileName);
+            }
 
-		bool compile(string workdir, Compiler compiler,
-			Dictionary<string, string> replacement, string compilerLogFullPath,
-			bool isChecker = false)
-		{
-			for (int i = 0; i < compiler.Commands.Count; i++)
-			{
-				Tester tester = new Tester();
+            if (answerFilePath != null)
+            {
+                replacement.Add("$(AnswerFilePath)", answerFilePath);
+            }
 
-				string program = re.Replace(compiler.Commands[i].Program, match => replacement[match.Value]);
-				string args = re.Replace(isChecker ?
-					compiler.Commands[i].Arguments + " " + compiler.Commands[i].CheckerArguments :
-					compiler.Commands[i].Arguments, match => replacement[match.Value]);
+            if (reportFileName != null)
+            {
+                replacement.Add("$(ReportFileName)", reportFileName);
+            }
 
-				tester.SetProgram(program, $"\"{program}\" {args}");
+            if (reportFilePath != null)
+            {
+                replacement.Add("$(ReportFilePath)", reportFilePath);
+            }
 
-				tester.SetWorkDirectory(workdir);
-				tester.SetRealTimeLimit(compiler.CompilersRealTimeLimit);
-				tester.RedirectIOHandleToFile(IOHandleType.Output, compilerLogFullPath);
-				tester.RedirectIOHandleToHandle(IOHandleType.Error, tester.GetIORedirectedHandle(IOHandleType.Output));
+            return replacement;
+        }
 
-				if (tester.Run(false))
-					logger.Info("Slot {0}: Compiler run successfully", slotNum);
-				else
-				{
-					logger.Error("Slot {0}: Can't run compiller", slotNum);
+        private bool compile(string workdir, Compiler compiler,
+            Dictionary<string, string> replacement, string compilerLogFullPath,
+            bool isChecker = false)
+        {
+            for (int i = 0; i < compiler.Commands.Count; i++)
+            {
+                Tester tester = new Tester();
 
-					tester.Destroy();
-					return false;
-				}
+                string program = re.Replace(compiler.Commands[i].Program, match => replacement[match.Value]);
+                string args = re.Replace(isChecker ?
+                    compiler.Commands[i].Arguments + " " + compiler.Commands[i].CheckerArguments :
+                    compiler.Commands[i].Arguments, match => replacement[match.Value]);
 
-				if (tester.Wait())
-					logger.Info("Slot {0}: Waiting started", slotNum);
-				else
-				{
-					logger.Error("Slot {0}: Wait failed", slotNum);
+                tester.SetProgram(program, $"\"{program}\" {args}");
 
-					tester.Destroy();
-					return false;
-				}
+                tester.SetWorkDirectory(workdir);
+                tester.SetRealTimeLimit(compiler.CompilersRealTimeLimit);
+                tester.RedirectIOHandleToFile(IOHandleType.Output, compilerLogFullPath);
+                tester.RedirectIOHandleToHandle(IOHandleType.Error, tester.GetIORedirectedHandle(IOHandleType.Output));
 
-				uint exitCode = tester.GetExitCode();
-				if (exitCode == 0)
-					logger.Info("Slot {0}: Compiler exited successfully", slotNum);
-				else
-				{
-					logger.Error("Slot {0}: Compiler exit with code {0}", slotNum, exitCode);
+                if (tester.Run(false))
+                {
+                    logger.Info("Slot {0}: Compiler run successfully", slotNum);
+                }
+                else
+                {
+                    logger.Error("Slot {0}: Can't run compiller", slotNum);
 
-					tester.Destroy();
-					return false;
-				}
+                    tester.Destroy();
+                    return false;
+                }
 
-				tester.Destroy();
-			}
+                if (tester.Wait())
+                {
+                    logger.Info("Slot {0}: Waiting started", slotNum);
+                }
+                else
+                {
+                    logger.Error("Slot {0}: Wait failed", slotNum);
 
-			logger.Info("File {0} compiled successfully", replacement["$(SourceFilename)"]);
-			return true;
-		}
+                    tester.Destroy();
+                    return false;
+                }
 
-		bool compileChecker(string workdir, ProblemFile checker, Compiler compiler)
-		{
-			string sourceFilename = $"checker{compiler.FileExt}";
-			string sourceFullPath = Path.Combine(workdir, sourceFilename);
-			string compilerLogFullPath = Path.Combine(workdir, Application.Get().Configuration.CompilerLogFileName);
+                uint exitCode = tester.GetExitCode();
+                if (exitCode == 0)
+                {
+                    logger.Info("Slot {0}: Compiler exited successfully", slotNum);
+                }
+                else
+                {
+                    logger.Error("Slot {0}: Compiler exit with code {0}", slotNum, exitCode);
 
-			Application.Get().FileProvider.Copy(checker, sourceFullPath);
+                    tester.Destroy();
+                    return false;
+                }
 
-			var replacement = GenerateReplacementDictionary(
-					   sourceFullPath: sourceFullPath,
-					   sourceFilename: sourceFilename,
-					   binaryFullPath: Path.Combine(workdir, checkerBinaryFilename),
-					   binaryFilename: checkerBinaryFilename,
-					   workDirecrory: workdir,
-					   compilerLogFilename: Application.Get().Configuration.CompilerLogFileName,
-					   compilerLogFullPath: compilerLogFullPath
-				   );
+                tester.Destroy();
+            }
 
-			return compile(workdir, compiler, replacement, compilerLogFullPath, true);
-		}
+            logger.Info("File {0} compiled successfully", replacement["$(SourceFilename)"]);
+            return true;
+        }
 
-		bool compileSolution(string workdir, ProblemFile solution, Compiler compiler)
-		{
-			string sourceFilename = $"solution{compiler.FileExt}";
-			string sourceFullPath = Path.Combine(workdir, sourceFilename);
-			string compilerLogFullPath = Path.Combine(workdir, Application.Get().Configuration.CompilerLogFileName);
+        private bool compileChecker(string workdir, ProblemFile checker, Compiler compiler)
+        {
+            string sourceFilename = $"checker{compiler.FileExt}";
+            string sourceFullPath = Path.Combine(workdir, sourceFilename);
+            string compilerLogFullPath = Path.Combine(workdir, Application.Get().Configuration.CompilerLogFileName);
 
-			Application.Get().FileProvider.Copy(solution, sourceFullPath);
+            Application.Get().FileProvider.Copy(checker, sourceFullPath);
 
-			var replacement = GenerateReplacementDictionary(
-					   sourceFullPath: sourceFullPath,
-					   sourceFilename: sourceFilename,
-					   binaryFullPath: Path.Combine(workdir, solutionBinaryFilename),
-					   binaryFilename: solutionBinaryFilename,
-					   workDirecrory: workdir,
-					   compilerLogFilename: Application.Get().Configuration.CompilerLogFileName,
-					   compilerLogFullPath: compilerLogFullPath
-				   );
+            var replacement = GenerateReplacementDictionary(
+                       sourceFullPath: sourceFullPath,
+                       sourceFilename: sourceFilename,
+                       binaryFullPath: Path.Combine(workdir, checkerBinaryFilename),
+                       binaryFilename: checkerBinaryFilename,
+                       workDirecrory: workdir,
+                       compilerLogFilename: Application.Get().Configuration.CompilerLogFileName,
+                       compilerLogFullPath: compilerLogFullPath
+                   );
 
-			return compile(workdir, compiler, replacement, compilerLogFullPath, false);
-		}
+            return compile(workdir, compiler, replacement, compilerLogFullPath, true);
+        }
 
-		public bool Testing(Submission submission, Problem problem, ProblemFile solution)
-		{
-			string workdir = new DirectoryInfo(Path.Combine(Application.Get().Configuration.TestingWorkDirectory, Guid.NewGuid().ToString())).FullName;
-			Directory.CreateDirectory(workdir);
-			logger.Info("Slot {0} starting testing at {1}", slotNum, workdir);
+        private bool compileSolution(string workdir, ProblemFile solution, Compiler compiler)
+        {
+            string sourceFilename = $"solution{compiler.FileExt}";
+            string sourceFullPath = Path.Combine(workdir, sourceFilename);
+            string compilerLogFullPath = Path.Combine(workdir, Application.Get().Configuration.CompilerLogFileName);
 
-			Compiler checkerCompiler = Application.Get().Compilers.GetCompiler(problem.CheckerCompilerId);
-			Compiler solutionCompiler = Application.Get().Compilers.GetCompiler(submission.CompilerId);
+            Application.Get().FileProvider.Copy(solution, sourceFullPath);
 
-			string inputFileFullPath = Path.Combine(workdir, Application.Get().Configuration.InputFileName);
-			string outputFileFullPath = Path.Combine(workdir, Application.Get().Configuration.OutputFileName);
-			string answerFileFullPath = Path.Combine(workdir, Application.Get().Configuration.AnswerFileName);
-			string reportFileFullPath = Path.Combine(workdir, Application.Get().Configuration.ReportFileName);
-			string compilerLogFileFullPath = Path.Combine(workdir, Application.Get().Configuration.CompilerLogFileName);
+            var replacement = GenerateReplacementDictionary(
+                       sourceFullPath: sourceFullPath,
+                       sourceFilename: sourceFilename,
+                       binaryFullPath: Path.Combine(workdir, solutionBinaryFilename),
+                       binaryFilename: solutionBinaryFilename,
+                       workDirecrory: workdir,
+                       compilerLogFilename: Application.Get().Configuration.CompilerLogFileName,
+                       compilerLogFullPath: compilerLogFullPath
+                   );
 
-			if (!compileChecker(workdir, problem.Checker, checkerCompiler))
-			{
-				TestResult testResult = new TestResult();
-				testResult.SubmissionId = submission.Id;
-				testResult.TestId = problem.Tests[0].Id;
-				testResult.Result = TestingResult.TestingError;
+            return compile(workdir, compiler, replacement, compilerLogFullPath, false);
+        }
 
-				Application.Get().TestingResults.Enqueue(testResult);
-				return false;
-			}
-			if (!compileSolution(workdir, solution, solutionCompiler))
-			{
-				TestResult testResult = new TestResult();
-				testResult.SubmissionId = submission.Id;
-				testResult.TestId = problem.Tests[0].Id;
-				testResult.Result = TestingResult.CompilerError;
-				testResult.Log = File.ReadAllText(compilerLogFileFullPath);
+        public bool Testing(Submission submission, Problem problem, ProblemFile solution)
+        {
+            string workdir = new DirectoryInfo(Path.Combine(Application.Get().Configuration.TestingWorkDirectory, Guid.NewGuid().ToString())).FullName;
+            Directory.CreateDirectory(workdir);
+            logger.Info("Slot {0} starting testing at {1}", slotNum, workdir);
 
-				Application.Get().TestingResults.Enqueue(testResult);
-				return true;
-			}
+            Compiler checkerCompiler = Application.Get().Compilers.GetCompiler(problem.CheckerCompilerId);
+            Compiler solutionCompiler = Application.Get().Compilers.GetCompiler(submission.CompilerId);
 
-			for (uint i = 0; i < problem.Tests.Length; i++)
-			{
-				logger.Info("Slot {0}: Statring testing test with num {1}", slotNum, problem.Tests[i].Num);
+            string inputFileFullPath = Path.Combine(workdir, Application.Get().Configuration.InputFileName);
+            string outputFileFullPath = Path.Combine(workdir, Application.Get().Configuration.OutputFileName);
+            string answerFileFullPath = Path.Combine(workdir, Application.Get().Configuration.AnswerFileName);
+            string reportFileFullPath = Path.Combine(workdir, Application.Get().Configuration.ReportFileName);
+            string compilerLogFileFullPath = Path.Combine(workdir, Application.Get().Configuration.CompilerLogFileName);
 
-				logger.Info("Slot {0}: Preparion solution start enviroment", slotNum);
-				logger.Info("Slot {0}: Copy input file.", slotNum);
-				Application.Get().FileProvider.Copy(problem.Tests[i].Input, inputFileFullPath);
+            if (!compileChecker(workdir, problem.Checker, checkerCompiler))
+            {
+                TestResult testResult = new TestResult();
+                testResult.SubmissionId = submission.Id;
+                testResult.TestId = problem.Tests[0].Id;
+                testResult.Result = TestingResult.TestingError;
 
-				UsedResources solutionUsedResources;
-				TestResult testResult = new TestResult();
-				testResult.SubmissionId = submission.Id;
-				testResult.TestId = problem.Tests[i].Id;
+                Application.Get().Requests.Enqueue(apiClient.GetSendTestingResultRequestMessage(testResult));
 
-				{
-					Tester tester = new Tester();
+                SubmissionLog log = new SubmissionLog();
+                log.SubmissionId = submission.Id;
+                log.Type = SubmissionLogType.Source;
+                log.Data = File.ReadAllText(compilerLogFileFullPath);
 
-					var replacement = GenerateReplacementDictionary(
-						binaryFullPath: Path.Combine(workdir, solutionBinaryFilename),
-						binaryFilename: solutionBinaryFilename,
-						workDirecrory: workdir);
+                Application.Get().Requests.Enqueue(apiClient.GetSendLogRequestMessage(log));
+                return false;
+            }
+            if (!compileSolution(workdir, solution, solutionCompiler))
+            {
+                TestResult testResult = new TestResult();
+                testResult.SubmissionId = submission.Id;
+                testResult.TestId = problem.Tests[0].Id;
+                testResult.Result = TestingResult.CompilerError;
+                
+                Application.Get().Requests.Enqueue(apiClient.GetSendTestingResultRequestMessage(testResult));
 
-					string program = re.Replace(solutionCompiler.RunCommand.Program, match => replacement[match.Value]);
-					string args = re.Replace(solutionCompiler.RunCommand.Arguments, match => replacement[match.Value]);
+                SubmissionLog log = new SubmissionLog();
+                log.SubmissionId = submission.Id;
+                log.Type = SubmissionLogType.Source;
+                log.Data = File.ReadAllText(compilerLogFileFullPath);
 
-					tester.SetProgram(program, $"\"{program}\" {args}");
+                Application.Get().Requests.Enqueue(apiClient.GetSendLogRequestMessage(log));
 
-					tester.SetWorkDirectory(workdir);
-					tester.SetRealTimeLimit(60 * 1000);
-					tester.RedirectIOHandleToFile(IOHandleType.Input, inputFileFullPath);
-					tester.RedirectIOHandleToFile(IOHandleType.Output, outputFileFullPath);
-					tester.RedirectIOHandleToHandle(IOHandleType.Error, tester.GetIORedirectedHandle(IOHandleType.Output));
+                return true;
+            }
 
-					logger.Info("Slot {0}: Run solution", slotNum);
-					if (tester.Run(true))
-						logger.Info("Slot {0}: Solution run successfully", slotNum);
-					else
-					{
-						testResult.Result = TestingResult.TestingError;
-						Application.Get().TestingResults.Enqueue(testResult);
+            for (uint i = 0; i < problem.Tests.Length; i++)
+            {
+                logger.Info("Slot {0}: Statring testing test with num {1}", slotNum, problem.Tests[i].Num);
 
-						logger.Error("Slot {0}: Can't run solution", slotNum);
-						return false;
-					}
+                logger.Info("Slot {0}: Preparion solution start enviroment", slotNum);
+                logger.Info("Slot {0}: Copy input file.", slotNum);
+                Application.Get().FileProvider.Copy(problem.Tests[i].Input, inputFileFullPath);
+
+                UsedResources solutionUsedResources;
+                TestResult testResult = new TestResult();
+                testResult.SubmissionId = submission.Id;
+                testResult.TestId = problem.Tests[i].Id;
+
+                {
+                    Tester tester = new Tester();
+
+                    var replacement = GenerateReplacementDictionary(
+                        binaryFullPath: Path.Combine(workdir, solutionBinaryFilename),
+                        binaryFilename: solutionBinaryFilename,
+                        workDirecrory: workdir);
+
+                    string program = re.Replace(solutionCompiler.RunCommand.Program, match => replacement[match.Value]);
+                    string args = re.Replace(solutionCompiler.RunCommand.Arguments, match => replacement[match.Value]);
+
+                    tester.SetProgram(program, $"\"{program}\" {args}");
+
+                    tester.SetWorkDirectory(workdir);
+                    tester.SetRealTimeLimit(60 * 1000);
+                    tester.RedirectIOHandleToFile(IOHandleType.Input, inputFileFullPath);
+                    tester.RedirectIOHandleToFile(IOHandleType.Output, outputFileFullPath);
+                    tester.RedirectIOHandleToHandle(IOHandleType.Error, tester.GetIORedirectedHandle(IOHandleType.Output));
+
+                    logger.Info("Slot {0}: Run solution", slotNum);
+                    if (tester.Run(true))
+                    {
+                        logger.Info("Slot {0}: Solution run successfully", slotNum);
+                    }
+                    else
+                    {
+                        testResult.Result = TestingResult.TestingError;
+                        Application.Get().Requests.Enqueue(apiClient.GetSendTestingResultRequestMessage(testResult));
+
+                        logger.Error("Slot {0}: Can't run solution", slotNum);
+                        return false;
+                    }
 
                     //TODO: Time OUT
-					if (tester.Wait())
-						logger.Info("Slot {0}: Waiting started", slotNum);
-					else
-					{
-						testResult.Result = TestingResult.RunTimeError;
-						Application.Get().TestingResults.Enqueue(testResult);
+                    if (tester.Wait())
+                    {
+                        logger.Info("Slot {0}: Waiting started", slotNum);
+                    }
+                    else
+                    {
+                        testResult.Result = TestingResult.RunTimeError;
+                        Application.Get().Requests.Enqueue(apiClient.GetSendTestingResultRequestMessage(testResult));
 
-						logger.Error("Slot {0}: Wait failed", slotNum);
-						return false;
-					}
+                        logger.Error("Slot {0}: Wait failed", slotNum);
+                        return false;
+                    }
 
-					uint exitCode = tester.GetExitCode();
-					if (exitCode == 0)
-						logger.Info("Slot {0}: Solution exited successfully", slotNum);
-					else
-					{
-						testResult.Result = TestingResult.RunTimeError;
-						Application.Get().TestingResults.Enqueue(testResult);
+                    uint exitCode = tester.GetExitCode();
+                    if (exitCode == 0)
+                    {
+                        logger.Info("Slot {0}: Solution exited successfully", slotNum);
+                    }
+                    else
+                    {
+                        testResult.Result = TestingResult.RunTimeError;
+                        Application.Get().Requests.Enqueue(apiClient.GetSendTestingResultRequestMessage(testResult));
 
-						logger.Error("Slot {0}: Solution exit with code {1}", slotNum, exitCode);
-						return true;
-					}
+                        logger.Error("Slot {0}: Solution exit with code {1}", slotNum, exitCode);
+                        return true;
+                    }
 
-					solutionUsedResources = tester.GetUsedResources();
+                    solutionUsedResources = tester.GetUsedResources();
 
-					tester.Destroy();
-				}
+                    tester.Destroy();
+                }
 
-				logger.Info("Slot {0}: Preparion checker start enviroment", slotNum);
-				logger.Info("Slot {0}: Copy answer file.", slotNum);
-				Application.Get().FileProvider.Copy(problem.Tests[i].Answer, answerFileFullPath);
+                logger.Info("Slot {0}: Preparion checker start enviroment", slotNum);
+                logger.Info("Slot {0}: Copy answer file.", slotNum);
+                Application.Get().FileProvider.Copy(problem.Tests[i].Answer, answerFileFullPath);
 
-				{
-					Tester tester = new Tester();
+                {
+                    Tester tester = new Tester();
 
-					var replacement = GenerateReplacementDictionary(
-						binaryFullPath: Path.Combine(workdir, checkerBinaryFilename),
-						binaryFilename: checkerBinaryFilename,
-						workDirecrory: workdir,
-						inputFilePath: inputFileFullPath,
-						outputFilePath: outputFileFullPath,
-						answerFilePath: answerFileFullPath,
-						reportFilePath: reportFileFullPath);
+                    var replacement = GenerateReplacementDictionary(
+                        binaryFullPath: Path.Combine(workdir, checkerBinaryFilename),
+                        binaryFilename: checkerBinaryFilename,
+                        workDirecrory: workdir,
+                        inputFilePath: inputFileFullPath,
+                        outputFilePath: outputFileFullPath,
+                        answerFilePath: answerFileFullPath,
+                        reportFilePath: reportFileFullPath);
 
-					string program = re.Replace(checkerCompiler.RunCommand.Program, match => replacement[match.Value]);
-					string args = re.Replace(checkerCompiler.RunCommand.Arguments
-						 + " " + checkerCompiler.RunCommand.CheckerArguments, match => replacement[match.Value]);
+                    string program = re.Replace(checkerCompiler.RunCommand.Program, match => replacement[match.Value]);
+                    string args = re.Replace(checkerCompiler.RunCommand.Arguments
+                         + " " + checkerCompiler.RunCommand.CheckerArguments, match => replacement[match.Value]);
 
-					tester.SetProgram(program, $"\"{program}\" {args}");
+                    tester.SetProgram(program, $"\"{program}\" {args}");
 
-					tester.SetWorkDirectory(workdir);
-					tester.SetRealTimeLimit(60 * 1000);
-					//tester.RedirectIOHandleToFile(IOHandleType.Output, reportFileFullPath);
-					//tester.RedirectIOHandleToHandle(IOHandleType.Error, tester.GetIORedirectedHandle(IOHandleType.Output));
+                    tester.SetWorkDirectory(workdir);
+                    tester.SetRealTimeLimit(60 * 1000);
+                    //tester.RedirectIOHandleToFile(IOHandleType.Output, reportFileFullPath);
+                    //tester.RedirectIOHandleToHandle(IOHandleType.Error, tester.GetIORedirectedHandle(IOHandleType.Output));
 
-					logger.Info("Slot {0}: Run checker", slotNum);
-					if (tester.Run())
-						logger.Info("Slot {0}: Checker run successfully", slotNum);
-					else
-					{
-						testResult.Result = TestingResult.TestingError;
-						Application.Get().TestingResults.Enqueue(testResult);
+                    logger.Info("Slot {0}: Run checker", slotNum);
+                    if (tester.Run())
+                    {
+                        logger.Info("Slot {0}: Checker run successfully", slotNum);
+                    }
+                    else
+                    {
+                        testResult.Result = TestingResult.TestingError;
+                        Application.Get().Requests.Enqueue(apiClient.GetSendTestingResultRequestMessage(testResult));
 
-						logger.Error("Slot {0}: Can't run checker", slotNum);
-						return false;
-					}
+                        logger.Error("Slot {0}: Can't run checker", slotNum);
+                        return false;
+                    }
 
-					if (tester.Wait())
-						logger.Info("Slot {0}: Waiting started", slotNum);
-					else
-					{
-						testResult.Result = TestingResult.TestingError;
-						Application.Get().TestingResults.Enqueue(testResult);
+                    if (tester.Wait())
+                    {
+                        logger.Info("Slot {0}: Waiting started", slotNum);
+                    }
+                    else
+                    {
+                        testResult.Result = TestingResult.TestingError;
+                        Application.Get().Requests.Enqueue(apiClient.GetSendTestingResultRequestMessage(testResult));
 
-						logger.Error("Slot {0}: Wait failed", slotNum);
-						return false;
-					}
+                        logger.Error("Slot {0}: Wait failed", slotNum);
+                        return false;
+                    }
 
-					uint exitCode = tester.GetExitCode();
-					logger.Info("Slot {0}: Checker exit with code {1}", slotNum, exitCode);
+                    uint exitCode = tester.GetExitCode();
+                    logger.Info("Slot {0}: Checker exit with code {1}", slotNum, exitCode);
 
-					testResult.Result = (TestingResult)exitCode;
+                    testResult.Result = (TestingResult)exitCode;
+                    testResult.Log = File.ReadAllText(reportFileFullPath);
 
-					testResult.WorkTime = solutionUsedResources.cpuWorkTimeMs;
-					testResult.UsedMemmory = solutionUsedResources.peakMemoryUsageKb;
+                    testResult.WorkTime = solutionUsedResources.cpuWorkTimeMs;
+                    testResult.UsedMemmory = solutionUsedResources.peakMemoryUsageKb;
 
-					Application.Get().TestingResults.Enqueue(testResult);
+                    Application.Get().Requests.Enqueue(apiClient.GetSendTestingResultRequestMessage(testResult));
 
-					tester.Destroy();
-				}
+                    tester.Destroy();
+                }
 
-			}
-			return true;
-			//Directory.Delete(workdir, true);
-		}
-	}
+            }
+
+            Directory.Delete(workdir, true);
+
+            return true;
+        }
+    }
 }
