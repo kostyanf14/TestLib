@@ -198,7 +198,7 @@ namespace TestLib
 			return tester->Run();
 		}
 
-		Boolean Wait()
+		WaitingResult Wait()
 		{
 			return tester->Wait();
 		}

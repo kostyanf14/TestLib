@@ -179,8 +179,9 @@ namespace TestLib.Worker.ClientApi
         public RequestMessage GetFailSubmissionsRequestMessage(ulong id) =>
             new RequestMessage(buildEndpoint("submissions", id, "fail"), null);
 
-        public RequestMessage GetReleaseSubmissionsRequestMessage(ulong id) =>
-             new RequestMessage(buildEndpoint("submissions", id, "release"), null);
+
+        public RequestMessage GetReleaseSubmissionsRequestMessage(ulong id, WorkerResult result) =>
+             new RequestMessage(buildEndpoint("submissions", id, "release"), new { release = new { test_result = (byte)result } }.AsJson());
 
         public RequestMessage GetSendTestingResultRequestMessage(TestResult result) =>
              new RequestMessage(buildEndpoint("results"), result.AsJson());

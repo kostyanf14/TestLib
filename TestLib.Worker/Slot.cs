@@ -51,10 +51,19 @@ namespace TestLib.Worker
 					problem = app.Problems.GetProblem(submission.ProblemId);
 
 				Worker worker = new Worker(slotNumber, client);
-				if (worker.Testing(submission, problem, solution))
-					app.Requests.Enqueue(client.GetReleaseSubmissionsRequestMessage(submission.Id));
-				else
-                    app.Requests.Enqueue(client.GetFailSubmissionsRequestMessage(submission.Id));
+                var result = worker.Testing(submission, problem, solution);
+
+                switch (result)
+                {
+                    case WorkerResult.Ok:
+                    case WorkerResult.CompilerError:
+                        app.Requests.Enqueue(client.GetReleaseSubmissionsRequestMessage(submission.Id, result));
+                        break;
+                    case WorkerResult.TestingError:
+                        app.Requests.Enqueue(client.GetFailSubmissionsRequestMessage(submission.Id));
+                        break;
+                }
+                           
 			}
 
 			token.ThrowIfCancellationRequested();

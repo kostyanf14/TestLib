@@ -4,7 +4,7 @@ namespace Internal
 {
 	bool Tester::Run(bool useRestrictions)
 	{
-		Internal::logger->Debug(L"Called " __FUNCTIONW__ );
+		Internal::logger->Debug(L"Called " __FUNCTIONW__);
 
 		if (!workDirSet || !programSet)
 		{
@@ -24,7 +24,7 @@ namespace Internal
 		HANDLE hProcessCreationToken = DuplicateCurrentProcessToken();
 		startupHandles.job = CreateJobObjectW(nullptr, nullptr);
 
-		STARTUPINFOEXW startupInfoEx = { 0 };
+		STARTUPINFOEXW startupInfoEx = {0};
 		startupInfoEx.StartupInfo.cb = sizeof(startupInfoEx);
 
 		if (IoHandles.input != INVALID_HANDLE_VALUE)
@@ -51,9 +51,9 @@ namespace Internal
 			//applyStartupAttribute(&startupInfoEx);
 		}
 
-		PROCESS_INFORMATION processInfo = { 0 };
+		PROCESS_INFORMATION processInfo = {0};
 		BOOL result = CreateProcessAsUserW(hProcessCreationToken, program, args,
-			nullptr, nullptr, TRUE, CREATE_SUSPENDED | EXTENDED_STARTUPINFO_PRESENT | CREATE_NEW_CONSOLE,
+			nullptr, nullptr, TRUE, CREATE_SUSPENDED | EXTENDED_STARTUPINFO_PRESENT | CREATE_NO_WINDOW,
 			nullptr, workDirectory, (STARTUPINFOW*)&startupInfoEx, &processInfo);
 
 		if (!result)
@@ -127,8 +127,10 @@ namespace Internal
 		return true;
 	}
 
-	bool Tester::Wait()
+	TestLib::WaitingResult Tester::Wait()
 	{
+		TestLib::WaitingResult result;
+
 		DWORD timeOut = limits.realTimeLimitMs - (GetTickCount() - startTime);
 
 		DWORD waitCode = WaitForSingleObject(startupHandles.process, timeOut);
@@ -144,6 +146,7 @@ namespace Internal
 
 			usedResources.realTimeUsageMs = limits.realTimeLimitMs + 1;
 			usedResources.processExitCode = WAIT_TIMEOUT;
+			result = TestLib::WaitingResult::TimeOut;
 
 			Internal::logger->Error(L"Waiting program timeout expired. workDirectory = '%S', program = '%S'", workDirectory, program);
 			break;
@@ -156,12 +159,16 @@ namespace Internal
 			SafeCloseHandle(&startupHandles.job);
 
 			usedResources.processExitCode = -1;
+			result = TestLib::WaitingResult::Fail;
 
 			Internal::logger->Error(L"Waiting program failed. workDirectory = '%S', program = '%S'", workDirectory, program);
 			break;
 
 		case WAIT_OBJECT_0:
 			GetExitCodeProcess(startupHandles.process, &usedResources.processExitCode);
+
+			result = TestLib::WaitingResult::Ok;
+
 			Internal::logger->Info(L"Program waited successfully. workDirectory = '%S', program = '%S'", workDirectory, program);
 			break;
 
@@ -199,7 +206,7 @@ namespace Internal
 			}
 		}
 
-		return waitCode == WAIT_OBJECT_0;
+		return result;
 	}
 	void Tester::CloseIoRedirectionHandles()
 	{

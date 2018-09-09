@@ -11,7 +11,7 @@ namespace TestLib.Worker.ClientApi
 
         RequestMessage GetTakeSubmissionsRequestMessage(ulong id);
         RequestMessage GetFailSubmissionsRequestMessage(ulong id);
-        RequestMessage GetReleaseSubmissionsRequestMessage(ulong id);
+        RequestMessage GetReleaseSubmissionsRequestMessage(ulong id, WorkerResult result);
         RequestMessage GetSendTestingResultRequestMessage(TestResult result);
         RequestMessage GetSendLogRequestMessage(SubmissionLog log);
 

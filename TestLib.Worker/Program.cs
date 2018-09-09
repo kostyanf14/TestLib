@@ -13,6 +13,7 @@ namespace TestLib.Worker
         private static void SendResults(CancellationToken token)
         {
             IApiClient client = new HttpCodelabsApiClient();
+            var logger = LogManager.GetCurrentClassLogger();
             Application app = Application.Get();
 
             token.Register(() => app.Requests.Enqueue(null));
@@ -25,7 +26,14 @@ namespace TestLib.Worker
                     break;
                 }
 
-                client.SendRequest(request);
+                try
+                {
+                    client.SendRequest(request);
+                }
+                catch  (Exception ex)
+                {
+                    logger.Error("Error sending request {0} to server: {1}. Some data will be lose", request.RequestUri, ex);
+                }
             }
 
             token.ThrowIfCancellationRequested();
@@ -60,6 +68,7 @@ namespace TestLib.Worker
                     cancellationTokenSource.Cancel();
                     break;
                 }
+               // if ()
             }
 
             try { Task.WaitAll(workerTasks); }

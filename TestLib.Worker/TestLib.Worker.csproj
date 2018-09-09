@@ -82,6 +82,7 @@
     <Compile Include="Slot.cs" />
     <Compile Include="Test.cs" />
     <Compile Include="Worker.cs" />
+    <Compile Include="WorkerResult.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config">

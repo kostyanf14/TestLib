@@ -41,6 +41,13 @@ namespace TestLib
 		PartillyCorrect = 16
 	};
 
+	public enum class WaitingResult
+	{
+		Ok,
+		TimeOut,
+		Fail,
+	};
+
 	public value class UsedResources
 	{
 	public:
@@ -291,7 +298,7 @@ namespace Internal
 		}
 
 		bool Run(bool useRestrictions = false);
-		bool Wait();
+		TestLib::WaitingResult Wait();
 		void CloseIoRedirectionHandles();
 
 		uint32 GetRunResult()

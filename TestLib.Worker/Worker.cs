@@ -147,7 +147,7 @@ namespace TestLib.Worker
                     return false;
                 }
 
-                if (tester.Wait())
+                if (tester.Wait() == WaitingResult.Ok)
                 {
                     logger.Info("Slot {0}: Waiting started", slotNum);
                 }
@@ -221,7 +221,7 @@ namespace TestLib.Worker
             return compile(workdir, compiler, replacement, compilerLogFullPath, false);
         }
 
-        public bool Testing(Submission submission, Problem problem, ProblemFile solution)
+        public WorkerResult Testing(Submission submission, Problem problem, ProblemFile solution)
         {
             string workdir = new DirectoryInfo(Path.Combine(Application.Get().Configuration.TestingWorkDirectory, Guid.NewGuid().ToString())).FullName;
             Directory.CreateDirectory(workdir);
@@ -238,38 +238,31 @@ namespace TestLib.Worker
 
             if (!compileChecker(workdir, problem.Checker, checkerCompiler))
             {
-                TestResult testResult = new TestResult();
-                testResult.SubmissionId = submission.Id;
-                testResult.TestId = problem.Tests[0].Id;
-                testResult.Result = TestingResult.TestingError;
-
-                Application.Get().Requests.Enqueue(apiClient.GetSendTestingResultRequestMessage(testResult));
-
                 SubmissionLog log = new SubmissionLog();
                 log.SubmissionId = submission.Id;
-                log.Type = SubmissionLogType.Source;
+                log.Type = SubmissionLogType.Checker;
                 log.Data = File.ReadAllText(compilerLogFileFullPath);
 
                 Application.Get().Requests.Enqueue(apiClient.GetSendLogRequestMessage(log));
-                return false;
+                return WorkerResult.TestingError;
             }
-            if (!compileSolution(workdir, solution, solutionCompiler))
-            {
-                TestResult testResult = new TestResult();
-                testResult.SubmissionId = submission.Id;
-                testResult.TestId = problem.Tests[0].Id;
-                testResult.Result = TestingResult.CompilerError;
-                
-                Application.Get().Requests.Enqueue(apiClient.GetSendTestingResultRequestMessage(testResult));
 
+            {
+                bool st = compileSolution(workdir, solution, solutionCompiler);
                 SubmissionLog log = new SubmissionLog();
                 log.SubmissionId = submission.Id;
                 log.Type = SubmissionLogType.Source;
                 log.Data = File.ReadAllText(compilerLogFileFullPath);
 
-                Application.Get().Requests.Enqueue(apiClient.GetSendLogRequestMessage(log));
+                if (!string.IsNullOrWhiteSpace(log.Data))
+                {
+                    Application.Get().Requests.Enqueue(apiClient.GetSendLogRequestMessage(log));
+                }
 
-                return true;
+                if (!st)
+                {
+                    return WorkerResult.CompilerError;
+                }
             }
 
             for (uint i = 0; i < problem.Tests.Length; i++)
@@ -280,7 +273,6 @@ namespace TestLib.Worker
                 logger.Info("Slot {0}: Copy input file.", slotNum);
                 Application.Get().FileProvider.Copy(problem.Tests[i].Input, inputFileFullPath);
 
-                UsedResources solutionUsedResources;
                 TestResult testResult = new TestResult();
                 testResult.SubmissionId = submission.Id;
                 testResult.TestId = problem.Tests[i].Id;
@@ -299,7 +291,7 @@ namespace TestLib.Worker
                     tester.SetProgram(program, $"\"{program}\" {args}");
 
                     tester.SetWorkDirectory(workdir);
-                    tester.SetRealTimeLimit(60 * 1000);
+                    tester.SetRealTimeLimit(submission.RealTimeLimit);
                     tester.RedirectIOHandleToFile(IOHandleType.Input, inputFileFullPath);
                     tester.RedirectIOHandleToFile(IOHandleType.Output, outputFileFullPath);
                     tester.RedirectIOHandleToHandle(IOHandleType.Error, tester.GetIORedirectedHandle(IOHandleType.Output));
@@ -311,25 +303,33 @@ namespace TestLib.Worker
                     }
                     else
                     {
-                        testResult.Result = TestingResult.TestingError;
-                        Application.Get().Requests.Enqueue(apiClient.GetSendTestingResultRequestMessage(testResult));
-
                         logger.Error("Slot {0}: Can't run solution", slotNum);
-                        return false;
+                        return WorkerResult.TestingError;
                     }
 
-                    //TODO: Time OUT
-                    if (tester.Wait())
+                    var waitStatus = tester.Wait();
+                    if (waitStatus == WaitingResult.Ok)
                     {
                         logger.Info("Slot {0}: Waiting started", slotNum);
                     }
-                    else
+                    else if (waitStatus == WaitingResult.TimeOut)
                     {
-                        testResult.Result = TestingResult.RunTimeError;
+                        testResult.UsedMemmory = tester.GetUsedResources().peakMemoryUsageKb;
+                        testResult.WorkTime = tester.GetUsedResources().realTimeUsageMs;
+
+                        testResult.Result = TestingResult.TimeLimitExceded;
                         Application.Get().Requests.Enqueue(apiClient.GetSendTestingResultRequestMessage(testResult));
 
+                        logger.Info("Slot {0}: Wait timeouted", slotNum);
+
+                        //Not start checker
+                        tester.Destroy();
+                        continue;
+                    }
+                    else
+                    {
                         logger.Error("Slot {0}: Wait failed", slotNum);
-                        return false;
+                        return WorkerResult.TestingError;
                     }
 
                     uint exitCode = tester.GetExitCode();
@@ -339,16 +339,48 @@ namespace TestLib.Worker
                     }
                     else
                     {
+                        testResult.UsedMemmory = tester.GetUsedResources().peakMemoryUsageKb;
+                        testResult.WorkTime = tester.GetUsedResources().cpuWorkTimeMs;
+
                         testResult.Result = TestingResult.RunTimeError;
                         Application.Get().Requests.Enqueue(apiClient.GetSendTestingResultRequestMessage(testResult));
 
-                        logger.Error("Slot {0}: Solution exit with code {1}", slotNum, exitCode);
-                        return true;
+                        logger.Info("Slot {0}: Solution exit with code {1}", slotNum, exitCode);
+
+                        //Not start checker
+                        tester.Destroy();
+                        continue;
                     }
 
-                    solutionUsedResources = tester.GetUsedResources();
+                    testResult.UsedMemmory = tester.GetUsedResources().peakMemoryUsageKb;
+                    testResult.WorkTime = tester.GetUsedResources().cpuWorkTimeMs;
 
                     tester.Destroy();
+                }
+
+                if (testResult.WorkTime > submission.TimeLimit)
+                {
+                    testResult.Result = TestingResult.TimeLimitExceded;
+
+                    Application.Get().Requests.Enqueue(apiClient.GetSendTestingResultRequestMessage(testResult));
+
+                    logger.Info("Slot {0}: Solution work {1}ms and time limit {2}ms",
+                        slotNum, testResult.WorkTime, submission.TimeLimit);
+
+                    //Not start checker
+                    continue;
+                }
+
+                if (testResult.UsedMemmory > submission.MemoryLimit)
+                {
+                    testResult.Result = TestingResult.MemoryLimitExceded;
+                    Application.Get().Requests.Enqueue(apiClient.GetSendTestingResultRequestMessage(testResult));
+
+                    logger.Info("Slot {0}: Solution used {1}kb memory and memory limit {2}kb",
+                        slotNum, testResult.UsedMemmory, submission.MemoryLimit);
+
+                    //Not start checker
+                    continue;
                 }
 
                 logger.Info("Slot {0}: Preparion checker start enviroment", slotNum);
@@ -385,24 +417,18 @@ namespace TestLib.Worker
                     }
                     else
                     {
-                        testResult.Result = TestingResult.TestingError;
-                        Application.Get().Requests.Enqueue(apiClient.GetSendTestingResultRequestMessage(testResult));
-
                         logger.Error("Slot {0}: Can't run checker", slotNum);
-                        return false;
+                        return WorkerResult.TestingError;
                     }
 
-                    if (tester.Wait())
+                    if (tester.Wait() == WaitingResult.Ok)
                     {
                         logger.Info("Slot {0}: Waiting started", slotNum);
                     }
                     else
                     {
-                        testResult.Result = TestingResult.TestingError;
-                        Application.Get().Requests.Enqueue(apiClient.GetSendTestingResultRequestMessage(testResult));
-
                         logger.Error("Slot {0}: Wait failed", slotNum);
-                        return false;
+                        return WorkerResult.TestingError;
                     }
 
                     uint exitCode = tester.GetExitCode();
@@ -410,9 +436,6 @@ namespace TestLib.Worker
 
                     testResult.Result = (TestingResult)exitCode;
                     testResult.Log = File.ReadAllText(reportFileFullPath);
-
-                    testResult.WorkTime = solutionUsedResources.cpuWorkTimeMs;
-                    testResult.UsedMemmory = solutionUsedResources.peakMemoryUsageKb;
 
                     Application.Get().Requests.Enqueue(apiClient.GetSendTestingResultRequestMessage(testResult));
 
@@ -423,7 +446,7 @@ namespace TestLib.Worker
 
             Directory.Delete(workdir, true);
 
-            return true;
+            return WorkerResult.Ok;
         }
     }
 }
