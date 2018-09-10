@@ -30,7 +30,7 @@ namespace TestLib.Worker
                 {
                     client.SendRequest(request);
                 }
-                catch  (Exception ex)
+                catch (Exception ex)
                 {
                     logger.Error("Error sending request {0} to server: {1}. Some data will be lose", request.RequestUri, ex);
                 }
@@ -55,8 +55,9 @@ namespace TestLib.Worker
 
             for (uint i = 1; i <= app.Configuration.WorkerSlotCount; i++)
             {
+                var s = new Slot(i, cancellationTokenSource.Token);
                 workerTasks[i] =
-                    Task.Run(() => new Slot(i, cancellationTokenSource.Token).Do(), cancellationTokenSource.Token);
+                    Task.Run(() => s.Do(), cancellationTokenSource.Token);
             }
 
             for (; ; )
@@ -68,7 +69,7 @@ namespace TestLib.Worker
                     cancellationTokenSource.Cancel();
                     break;
                 }
-               // if ()
+                // if ()
             }
 
             try { Task.WaitAll(workerTasks); }
