@@ -62,14 +62,19 @@ namespace TestLib.Worker
 
             for (; ; )
             {
-                var cmd = Console.ReadLine();
+                var cmd = Console.ReadLine().ToLower();
 
                 if (cmd == "exit")
                 {
                     cancellationTokenSource.Cancel();
                     break;
                 }
-                // if ()
+
+				if (cmd == "status")
+				{
+					for (uint i = 0; i <= app.Configuration.WorkerSlotCount; i++)
+						Console.WriteLine("Task {0}: {1}", i, workerTasks[i].Status.ToString());
+				}
             }
 
             try { Task.WaitAll(workerTasks); }
