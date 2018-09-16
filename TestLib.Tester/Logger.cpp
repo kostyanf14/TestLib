@@ -27,7 +27,7 @@ internal logger calls only at native code
 
 		va_list args;
 		va_start(args, format);
-		swprintf_s(buffer, format, args);
+		vswprintf_s(buffer, format, args);
 		va_end(args);
 
 
@@ -43,7 +43,7 @@ internal logger calls only at native code
 
 		va_list args;
 		va_start(args, format);
-		swprintf_s(buffer, format, args);
+		vswprintf_s(buffer, format, args);
 		va_end(args);
 
 
@@ -59,7 +59,7 @@ internal logger calls only at native code
 
 		va_list args;
 		va_start(args, format);
-		swprintf_s(buffer, format, args);
+		vswprintf_s(buffer, format, args);
 		va_end(args);
 
 		log(*this, 3u, buffer, userData);
@@ -74,7 +74,7 @@ internal logger calls only at native code
 
 		va_list args;
 		va_start(args, format);
-		swprintf_s(buffer, format, args);
+		vswprintf_s(buffer, format, args);
 		va_end(args);
 
 		log(*this, 4u, buffer, userData);
