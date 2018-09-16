@@ -14,6 +14,8 @@ namespace TestLib.Worker
 			this.slotNumber = slotNumber;
 			this.token = token;
 			client = new HttpCodelabsApiClient();
+
+			logger.Info("Slot {0} created", slotNumber);
 		}
 
 		public void Do()
@@ -30,9 +32,10 @@ namespace TestLib.Worker
 				}
 
 				var submission = submissions.First();
-				if (!client.TakeSubmissions(submission.Id))
+				if (!client.SendRequest(client.GetTakeSubmissionsRequestMessage(submission.Id)))
 					continue;
-				logger.Info("Testing slot {0} taken submission with id {1}", 1, submission.Id);
+
+				logger.Info("Testing slot {0} taken submission with id {1}", slotNumber, submission.Id);
 				logger.Debug("Submission: {0}", submission);
 
 				ProblemFile solution = client.DownloadSolution(submission);
@@ -47,12 +50,23 @@ namespace TestLib.Worker
 				else
 					problem = app.Problems.GetProblem(submission.ProblemId);
 
-				Worker worker = new Worker(slotNumber);
-				if (worker.Testing(submission, problem, solution))
-					client.ReleaseSubmissions(submission.Id);
-				else
-					client.FailSubmissions(submission.Id);
+				Worker worker = new Worker(slotNumber, client);
+                var result = worker.Testing(submission, problem, solution);
+
+                switch (result)
+                {
+                    case WorkerResult.Ok:
+                    case WorkerResult.CompilerError:
+                        app.Requests.Enqueue(client.GetReleaseSubmissionsRequestMessage(submission.Id, result));
+                        break;
+                    case WorkerResult.TestingError:
+                        app.Requests.Enqueue(client.GetFailSubmissionsRequestMessage(submission.Id));
+                        break;
+                }
+                           
 			}
+
+			token.ThrowIfCancellationRequested();
 		}
 
 		uint slotNumber;

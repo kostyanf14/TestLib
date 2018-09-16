@@ -41,6 +41,13 @@ namespace TestLib
 		PartillyCorrect = 16
 	};
 
+	public enum class WaitingResult
+	{
+		Ok,
+		TimeOut,
+		Fail,
+	};
+
 	public value class UsedResources
 	{
 	public:
@@ -99,15 +106,12 @@ namespace Internal
 			SafeCloseHandle(&IoHandles.output);
 			//SafeCloseHandle(&IoHandles.error);
 
-			HANDLE curr = GetCurrentProcess();
-			if (startupHandles.process == curr)
+			if (startupHandles.process != INVALID_HANDLE_VALUE)
 			{
-				throw "startupHandles.process is current process";
+				TerminateProcess(startupHandles.process, 0);
+				//SafeCloseHandle(&startupHandles.process);
+				//SafeCloseHandle(&startupHandles.thread);
 			}
-
-			TerminateProcess(startupHandles.process, 0);
-			//SafeCloseHandle(&startupHandles.process);
-			//SafeCloseHandle(&startupHandles.thread);
 
 			TerminateJobObject(startupHandles.job, 0);
 			//SafeCloseHandle(&startupHandles.job);
@@ -180,7 +184,7 @@ namespace Internal
 			case TestLib::IOHandleType::Output:
 			case TestLib::IOHandleType::Error:
 				rwMode = GENERIC_WRITE;
-				openMode = OPEN_ALWAYS;
+				openMode = CREATE_ALWAYS;
 				break;
 				/*case RedirectFileHandleMode::Rewrite:
 				rwMode = GENERIC_WRITE;
@@ -294,7 +298,7 @@ namespace Internal
 		}
 
 		bool Run(bool useRestrictions = false);
-		bool Wait();
+		TestLib::WaitingResult Wait();
 		void CloseIoRedirectionHandles();
 
 		uint32 GetRunResult()

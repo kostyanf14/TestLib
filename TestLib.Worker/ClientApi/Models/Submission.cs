@@ -24,9 +24,24 @@ namespace TestLib.Worker.ClientApi.Models
 			ProblemUpdatedAt = problemUpdatedAt;
 			MemoryLimit = memoryLimit;
 			TimeLimit = timeLimit;
-		}
+            RealTimeLimit = 10 * TimeLimit;
+        }
 
-		public ulong Id { get; set; }
+        public Submission(ulong id, string sourceUrl, string sourceUrlType, byte compilerId, byte checkerCompilerId, ulong problemId, DateTime problemUpdatedAt, uint memoryLimit, uint timeLimit, uint realTimeLimit)
+        {
+            Id = id;
+            SourceUrl = sourceUrl ?? throw new ArgumentNullException(nameof(sourceUrl));
+            SourceUrlType = sourceUrlType;
+            CompilerId = compilerId;
+            CheckerCompilerId = checkerCompilerId;
+            ProblemId = problemId;
+            ProblemUpdatedAt = problemUpdatedAt;
+            MemoryLimit = memoryLimit;
+            TimeLimit = timeLimit;
+            RealTimeLimit = realTimeLimit;
+        }
+
+        public ulong Id { get; set; }
 		public string SourceUrl { get; set; }
 		public string SourceUrlType
 		{
@@ -39,9 +54,10 @@ namespace TestLib.Worker.ClientApi.Models
 		public byte CheckerCompilerId { get; set; }
 		public ulong ProblemId { get; set; }
 		public DateTime ProblemUpdatedAt { get; set; }
-		public UInt32 MemoryLimit { get; set; }
-		public UInt32 TimeLimit { get; set; }
+		public uint MemoryLimit { get; set; }
+		public uint TimeLimit { get; set; }
+		public uint RealTimeLimit { get; set; }
 
-		public override string ToString() => JsonConvert.SerializeObject(this);
+        public override string ToString() => JsonConvert.SerializeObject(this);
 	}
 }

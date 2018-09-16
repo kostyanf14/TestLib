@@ -1,65 +1,82 @@
 ﻿using NLog;
 using System;
-using System.Collections.Specialized;
-using System.Net;
-using System.Net.Http;
-using System.Net.Sockets;
-using System.Runtime.InteropServices;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using TestLib.Worker.ClientApi;
 
 namespace TestLib.Worker
 {
-	class Program
-	{
-		static Logger logger = LogManager.GetCurrentClassLogger();
+    internal class Program
+    {
+        private static Logger logger = LogManager.GetCurrentClassLogger();
 
-		static void SendResults(CancellationToken token)
-		{
-			IApiClient client = new HttpCodelabsApiClient();
-			Application app = Application.Get();
+        private static void SendResults(CancellationToken token)
+        {
+            IApiClient client = new HttpCodelabsApiClient();
+            var logger = LogManager.GetCurrentClassLogger();
+            Application app = Application.Get();
 
-			while (!token.IsCancellationRequested)
-			{
-				var result = app.TestingResults.Dequeue();
-				client.SendTestingResult(result);
-			}
-		}
+            token.Register(() => app.Requests.Enqueue(null));
 
-		static void Main(string[] args)
-		{
-			Application app = Application.Get();
-			LoggerManaged loggerManaged = new LoggerManaged();
+            while (!token.IsCancellationRequested)
+            {
+                var request = app.Requests.Dequeue();
+                if (request is null)
+                {
+                    break;
+                }
 
-			logger.Info("TestLib.Worker started");
-			loggerManaged.InitNativeLogger(new LoggerManaged.LogEventHandler(logger.Log));
+                try
+                {
+                    client.SendRequest(request);
+                }
+                catch (Exception ex)
+                {
+                    logger.Error("Error sending request {0} to server: {1}. Some data will be lose", request.RequestUri, ex);
+                }
+            }
 
-			CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
-			Task[] workerTasks = new Task[app.Configuration.WorkerSlotCount + 1];
+            token.ThrowIfCancellationRequested();
+        }
 
-			workerTasks[0] = 
-				Task.Run(() => { SendResults(cancellationTokenSource.Token); }, cancellationTokenSource.Token);
+        private static void Main(string[] args)
+        {
+            Application app = Application.Get();
+            LoggerManaged loggerManaged = new LoggerManaged();
 
-			for (uint i = 1; i <= app.Configuration.WorkerSlotCount; i++)
-				workerTasks[i] = 
-					Task.Run(() => { new Slot(i, cancellationTokenSource.Token).Do(); }, cancellationTokenSource.Token);
+            logger.Info("TestLib.Worker started");
+            loggerManaged.InitNativeLogger(new LoggerManaged.LogEventHandler(LogManager.GetLogger("Internal").Log));
 
-			for (; ; )
-			{
-				var cmd = Console.ReadLine();
+            CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
+            Task[] workerTasks = new Task[app.Configuration.WorkerSlotCount + 1];
 
-				if (cmd == "exit")
-				{
-					cancellationTokenSource.Cancel();
-					break;
-				}
-			}
+            workerTasks[0] =
+                Task.Run(() => SendResults(cancellationTokenSource.Token), cancellationTokenSource.Token);
 
-			Task.WaitAll(workerTasks);
+            for (uint i = 1; i <= app.Configuration.WorkerSlotCount; i++)
+            {
+                var s = new Slot(i, cancellationTokenSource.Token);
+                workerTasks[i] =
+                    Task.Run(() => s.Do(), cancellationTokenSource.Token);
+            }
 
-			loggerManaged.Destroy();
-		}
-	}
+            for (; ; )
+            {
+                var cmd = Console.ReadLine();
+
+                if (cmd == "exit")
+                {
+                    cancellationTokenSource.Cancel();
+                    break;
+                }
+                // if ()
+            }
+
+            try { Task.WaitAll(workerTasks); }
+            catch { }
+
+            cancellationTokenSource.Dispose();
+            loggerManaged.Destroy();
+        }
+    }
 }

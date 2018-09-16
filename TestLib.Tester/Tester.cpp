@@ -4,27 +4,27 @@ namespace Internal
 {
 	bool Tester::Run(bool useRestrictions)
 	{
-		Internal::logger->Debug(L"Called " __FUNCTIONW__ );
+		Internal::logger->Debug(L"Called " __FUNCTIONW__);
 
 		if (!workDirSet || !programSet)
 		{
-			Internal::logger->Error(L"Can't start program w/o program name or workdirectory. workDirectory = '%s', program = '%s'", workDirectory, program);
+			Internal::logger->Error(L"Can't start program w/o program name or workdirectory. workDirectory = '%S', program = '%S'", workDirectory, program);
 
 			return false;
 		}
 		if (!realTimeLimitSet)
 		{
-			Internal::logger->Warning(L"Real time limit was not set. workDirectory = '%s', program = '%s'", workDirectory, program);
+			Internal::logger->Warning(L"Real time limit was not set. workDirectory = '%S', program = '%S'", workDirectory, program);
 		}
 		if (!memoryLimitSet)
 		{
-			Internal::logger->Warning(L"Memory limit was not set. workDirectory = '%s', program = '%s'", workDirectory, program);
+			Internal::logger->Warning(L"Memory limit was not set. workDirectory = '%S', program = '%S'", workDirectory, program);
 		}
 
 		HANDLE hProcessCreationToken = DuplicateCurrentProcessToken();
 		startupHandles.job = CreateJobObjectW(nullptr, nullptr);
 
-		STARTUPINFOEXW startupInfoEx = { 0 };
+		STARTUPINFOEXW startupInfoEx = {0};
 		startupInfoEx.StartupInfo.cb = sizeof(startupInfoEx);
 
 		if (IoHandles.input != INVALID_HANDLE_VALUE)
@@ -51,9 +51,9 @@ namespace Internal
 			//applyStartupAttribute(&startupInfoEx);
 		}
 
-		PROCESS_INFORMATION processInfo = { 0 };
+		PROCESS_INFORMATION processInfo = {0};
 		BOOL result = CreateProcessAsUserW(hProcessCreationToken, program, args,
-			nullptr, nullptr, TRUE, CREATE_SUSPENDED | EXTENDED_STARTUPINFO_PRESENT | CREATE_NEW_CONSOLE,
+			nullptr, nullptr, TRUE, CREATE_SUSPENDED | EXTENDED_STARTUPINFO_PRESENT | CREATE_NO_WINDOW,
 			nullptr, workDirectory, (STARTUPINFOW*)&startupInfoEx, &processInfo);
 
 		if (!result)
@@ -127,8 +127,10 @@ namespace Internal
 		return true;
 	}
 
-	bool Tester::Wait()
+	TestLib::WaitingResult Tester::Wait()
 	{
+		TestLib::WaitingResult result;
+
 		DWORD timeOut = limits.realTimeLimitMs - (GetTickCount() - startTime);
 
 		DWORD waitCode = WaitForSingleObject(startupHandles.process, timeOut);
@@ -144,8 +146,9 @@ namespace Internal
 
 			usedResources.realTimeUsageMs = limits.realTimeLimitMs + 1;
 			usedResources.processExitCode = WAIT_TIMEOUT;
+			result = TestLib::WaitingResult::TimeOut;
 
-			Internal::logger->Error(L"Waiting program timeout expired. workDirectory = '%s', program = '%s'", workDirectory, program);
+			Internal::logger->Error(L"Waiting program timeout expired. workDirectory = '%S', program = '%S'", workDirectory, program);
 			break;
 		case WAIT_FAILED:
 			TerminateProcess(startupHandles.process, -1);
@@ -156,17 +159,21 @@ namespace Internal
 			SafeCloseHandle(&startupHandles.job);
 
 			usedResources.processExitCode = -1;
+			result = TestLib::WaitingResult::Fail;
 
-			Internal::logger->Error(L"Waiting program failed. workDirectory = '%s', program = '%s'", workDirectory, program);
+			Internal::logger->Error(L"Waiting program failed. workDirectory = '%S', program = '%S'", workDirectory, program);
 			break;
 
 		case WAIT_OBJECT_0:
 			GetExitCodeProcess(startupHandles.process, &usedResources.processExitCode);
-			Internal::logger->Info(L"Program waited successfully. workDirectory = '%s', program = '%s'", workDirectory, program);
+
+			result = TestLib::WaitingResult::Ok;
+
+			Internal::logger->Info(L"Program waited successfully. workDirectory = '%S', program = '%S'", workDirectory, program);
 			break;
 
 		default:
-			Internal::logger->Error(L"Error waiting process. Unknown status. status = %u, workDirectory = '%s', program = '%s'", waitCode, workDirectory, program);
+			Internal::logger->Error(L"Error waiting process. Unknown status. status = %u, workDirectory = '%S', program = '%S'", waitCode, workDirectory, program);
 			break;
 		}
 
@@ -199,7 +206,7 @@ namespace Internal
 			}
 		}
 
-		return waitCode == WAIT_OBJECT_0;
+		return result;
 	}
 	void Tester::CloseIoRedirectionHandles()
 	{
