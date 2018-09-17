@@ -73,7 +73,7 @@ namespace TestLib.Worker
 				if (cmd == "status")
 				{
 					for (uint i = 0; i <= app.Configuration.WorkerSlotCount; i++)
-						Console.WriteLine("Task {0}: {1}", i, workerTasks[i].Status.ToString());
+						Console.WriteLine("Task {0}: {1}", i, workerTasks[i]?.Status.ToString());
 				}
             }
 
