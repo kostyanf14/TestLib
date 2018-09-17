@@ -6,82 +6,122 @@ using TestLib.Worker.ClientApi;
 
 namespace TestLib.Worker
 {
-    internal class Program
-    {
-        private static Logger logger = LogManager.GetCurrentClassLogger();
+	internal class Program
+	{
+		private static Logger logger = LogManager.GetCurrentClassLogger();
 
-        private static void SendResults(CancellationToken token)
-        {
-            IApiClient client = new HttpCodelabsApiClient();
-            var logger = LogManager.GetCurrentClassLogger();
-            Application app = Application.Get();
+		private static void SendResults(CancellationToken token)
+		{
+			IApiClient client = new HttpCodelabsApiClient();
+			var logger = LogManager.GetCurrentClassLogger();
+			Application app = Application.Get();
 
-            token.Register(() => app.Requests.Enqueue(null));
+			token.Register(() => app.Requests.Enqueue(null));
 
-            while (!token.IsCancellationRequested)
-            {
-                var request = app.Requests.Dequeue();
-                if (request is null)
+			while (!token.IsCancellationRequested)
+			{
+				var request = app.Requests.Dequeue();
+				if (request is null)
                 {
-                    break;
-                }
+					break;
+				}
 
-                try
-                {
-                    client.SendRequest(request);
-                }
-                catch (Exception ex)
-                {
-                    logger.Error("Error sending request {0} to server: {1}. Some data will be lose", request.RequestUri, ex);
-                }
-            }
+				try
+				{
+					client.SendRequest(request);
+				}
+				catch (Exception ex)
+				{
+					logger.Error("Error sending request {0} to server: {1}. Some data will be lose", request.RequestUri, ex);
+				}
+			}
 
-            token.ThrowIfCancellationRequested();
-        }
+			token.ThrowIfCancellationRequested();
+		}
 
-        private static void Main(string[] args)
-        {
-            Application app = Application.Get();
-            LoggerManaged loggerManaged = new LoggerManaged();
+		static CancellationTokenSource cancellationTokenSource = null;
+		static Task[] workerTasks = null;
 
-            logger.Info("TestLib.Worker started");
-            loggerManaged.InitNativeLogger(new LoggerManaged.LogEventHandler(LogManager.GetLogger("Internal").Log));
+		static void startResultSending()
+		{
+			workerTasks[0] =
+					Task.Run(() => SendResults(cancellationTokenSource.Token), cancellationTokenSource.Token);
+		}
 
-            CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
-            Task[] workerTasks = new Task[app.Configuration.WorkerSlotCount + 1];
+		static void startSlots()
+		{
+			for (uint i = 1; i <= Application.Get().Configuration.WorkerSlotCount; i++)
+			{
+				var s = new Slot(i, cancellationTokenSource.Token);
+				workerTasks[i] =
+					Task.Run(() => s.Do(), cancellationTokenSource.Token);
+			}
+		}
 
-            workerTasks[0] =
-                Task.Run(() => SendResults(cancellationTokenSource.Token), cancellationTokenSource.Token);
+		private static void Main(string[] args)
+		{
+			Application app = Application.Get();
+			LoggerManaged loggerManaged = new LoggerManaged();
 
-            for (uint i = 1; i <= app.Configuration.WorkerSlotCount; i++)
-            {
-                var s = new Slot(i, cancellationTokenSource.Token);
-                workerTasks[i] =
-                    Task.Run(() => s.Do(), cancellationTokenSource.Token);
-            }
+			logger.Info("TestLib.Worker started");
+			loggerManaged.InitNativeLogger(new LoggerManaged.LogEventHandler(LogManager.GetLogger("Internal").Log));
 
-            for (; ; )
-            {
-                var cmd = Console.ReadLine().ToLower();
+			workerTasks = new Task[app.Configuration.WorkerSlotCount + 1];
+			cancellationTokenSource = new CancellationTokenSource();
 
-                if (cmd == "exit")
-                {
-                    cancellationTokenSource.Cancel();
-                    break;
-                }
+			startResultSending();
+			startSlots();
+
+			for (;;)
+			{
+				var cmd = Console.ReadLine().ToLower();
+
+				if (cmd == "exit")
+				{
+					cancellationTokenSource.Cancel();
+					break;
+				}
 
 				if (cmd == "status")
 				{
 					for (uint i = 0; i <= app.Configuration.WorkerSlotCount; i++)
 						Console.WriteLine("Task {0}: {1}", i, workerTasks[i]?.Status.ToString());
 				}
-            }
 
-            try { Task.WaitAll(workerTasks); }
-            catch { }
+				if (cmd == "start")
+				{
+					cancellationTokenSource = new CancellationTokenSource();
+					startResultSending();
+					startSlots();
 
-            cancellationTokenSource.Dispose();
-            loggerManaged.Destroy();
-        }
-    }
+					for (uint i = 0; i <= app.Configuration.WorkerSlotCount; i++)
+						Console.WriteLine("Task {0}: {1}", i, workerTasks[i]?.Status.ToString());
+				}
+
+				if (cmd == "stop")
+				{
+					cancellationTokenSource.Cancel();
+
+					for (uint i = 0; i <= app.Configuration.WorkerSlotCount; i++)
+						Console.WriteLine("Task {0}: {1}", i, workerTasks[i]?.Status.ToString());
+
+					Console.WriteLine("Waiting stoping all tasks");
+
+					try
+					{ Task.WaitAll(workerTasks); }
+					catch { }
+
+					for (uint i = 0; i <= app.Configuration.WorkerSlotCount; i++)
+						Console.WriteLine("Task {0}: {1}", i, workerTasks[i]?.Status.ToString());
+				}
+			}
+
+			try
+			{ Task.WaitAll(workerTasks); }
+			catch { }
+
+			cancellationTokenSource.Dispose();
+			loggerManaged.Destroy();
+		}
+	}
 }
