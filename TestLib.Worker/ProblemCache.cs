@@ -61,6 +61,18 @@ namespace TestLib.Worker
 		public bool CheckProblem(ulong id, DateTime updatedAt = default(DateTime)) => 
 			problems.ContainsKey(id) && problems[id].LastUpdate == updatedAt;
 
+		public void Clear()
+		{
+			lock (problems)
+			{
+				foreach (var problem in problems)
+					Application.Get().FileProvider.RemoveProblem(problem.Value);
+
+				cachedProblems.Clear();
+				problems.Clear();
+				problemsNode.Clear();
+			}
+		}
 
         LinkedList<ulong> cachedProblems = new LinkedList<ulong>();
         Dictionary<ulong, Problem> problems = new Dictionary<ulong, Problem>();

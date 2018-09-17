@@ -114,6 +114,12 @@ namespace TestLib.Worker
 					for (uint i = 0; i <= app.Configuration.WorkerSlotCount; i++)
 						Console.WriteLine("Task {0}: {1}", i, workerTasks[i]?.Status.ToString());
 				}
+
+				if (cmd == "clear problem")
+				{
+					app.Problems.Clear();
+					Console.WriteLine("Problem cache was cleared");
+				}
 			}
 
 			try
