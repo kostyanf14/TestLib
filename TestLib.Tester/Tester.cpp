@@ -169,7 +169,7 @@ namespace Internal
 
 			result = TestLib::WaitingResult::Ok;
 
-			Internal::logger->Info(L"Program waited successfully. workDirectory = '%S', program = '%S'", workDirectory, program);
+			Internal::logger->Info(L"Program waited successfully. workDirectory = '%s', program = '%s'", workDirectory, program);
 			break;
 
 		default:
