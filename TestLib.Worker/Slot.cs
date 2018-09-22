@@ -1,4 +1,5 @@
 ﻿using NLog;
+using System;
 using System.Linq;
 using System.Threading;
 using TestLib.Worker.ClientApi;
@@ -51,7 +52,17 @@ namespace TestLib.Worker
 					problem = app.Problems.GetProblem(submission.ProblemId);
 
 				Worker worker = new Worker(slotNumber, client);
-                var result = worker.Testing(submission, problem, solution);
+                WorkerResult result;
+
+                try
+                {
+                    result = worker.Testing(submission, problem, solution);
+                }
+                catch(Exception ex)
+                {
+                    logger.Error("Slot {0} worker testing failed with exception {1}. Error {2}", slotNumber, ex.GetType().Name, ex);
+                    result = WorkerResult.TestingError;
+                }
 
                 switch (result)
                 {
