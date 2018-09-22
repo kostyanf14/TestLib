@@ -17,8 +17,8 @@ namespace TestLib.Worker.ClientApi.Models
 		[JsonProperty(PropertyName = "log")]
 		public string Log;
 		[JsonProperty(PropertyName = "memory")]
-		public UInt32 UsedMemmory;
+		public double UsedMemmory;
 		[JsonProperty(PropertyName = "time")]
-		public UInt32 WorkTime;
+		public double WorkTime;
 	}
 }
