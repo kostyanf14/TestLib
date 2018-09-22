@@ -181,9 +181,7 @@ namespace Internal
 
 		if (startupHandles.job != INVALID_HANDLE_VALUE)
 		{
-			JOBOBJECT_BASIC_ACCOUNTING_INFORMATION basicAccountingInfo;
-			JOBOBJECT_EXTENDED_LIMIT_INFORMATION exLimitInfo;
-
+			/*JOBOBJECT_BASIC_ACCOUNTING_INFORMATION basicAccountingInfo;
 			if (!QueryInformationJobObject(startupHandles.job, JobObjectBasicAccountingInformation,
 				&basicAccountingInfo, sizeof(JOBOBJECT_BASIC_ACCOUNTING_INFORMATION), nullptr))
 			{
@@ -193,8 +191,24 @@ namespace Internal
 			{
 				usedResources.cpuWorkTimeMs = static_cast<uint32>
 					((basicAccountingInfo.TotalKernelTime.QuadPart + basicAccountingInfo.TotalUserTime.QuadPart) / 10000);
+			}*/
+			
+			//TODO: check need if
+			LARGE_INTEGER frequency;
+			QueryPerformanceFrequency(&frequency);
+
+			ULONG64 processTime;
+			if (!QueryProcessCycleTime(startupHandles.process, &processTime))
+			{
+				Internal::logger->Error(L"Error get process cycle time in " __FUNCTIONW__ " at line %d. QueryProcessCycleTime failed, error code %d. workDirectory = '%s', program = '%s'",
+					__LINE__,  GetLastError(), workDirectory, program);
+			}
+			else
+			{
+				usedResources.cpuWorkTimeMs = processTime * 1e6 / frequency.QuadPart;
 			}
 
+			JOBOBJECT_EXTENDED_LIMIT_INFORMATION exLimitInfo;
 			if (!QueryInformationJobObject(startupHandles.job, JobObjectExtendedLimitInformation,
 				&exLimitInfo, sizeof(JOBOBJECT_EXTENDED_LIMIT_INFORMATION), nullptr))
 			{
