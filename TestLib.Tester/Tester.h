@@ -51,9 +51,9 @@ namespace TestLib
 	public value class UsedResources
 	{
 	public:
-		uint32 realTimeUsageMs;
-		uint32 cpuWorkTimeMs;
-		uint32 peakMemoryUsageKb;
+		double realTimeUsageMs;
+		double cpuWorkTimeMs;
+		double peakMemoryUsageKb;
 		uint32 processExitCode;
 	};
 }
