@@ -149,7 +149,7 @@ namespace TestLib.Worker
 
                 if (tester.Wait() == WaitingResult.Ok)
                 {
-                    logger.Info("Slot {0}: Waiting started", slotNum);
+                    logger.Debug("Slot {0}: Waited successfully", slotNum);
                 }
                 else
                 {
@@ -270,7 +270,7 @@ namespace TestLib.Worker
                 logger.Info("Slot {0}: Starting testing test with num {1}", slotNum, problem.Tests[i].Num);
 
                 logger.Info("Slot {0}: Preparion solution start enviroment", slotNum);
-                logger.Info("Slot {0}: Copy input file.", slotNum);
+                logger.Debug("Slot {0}: Copy input file.", slotNum);
                 Application.Get().FileProvider.Copy(problem.Tests[i].Input, inputFileFullPath);
 
                 TestResult testResult = new TestResult();
@@ -310,7 +310,7 @@ namespace TestLib.Worker
                     var waitStatus = tester.Wait();
                     if (waitStatus == WaitingResult.Ok)
                     {
-                        logger.Info("Slot {0}: Waiting started", slotNum);
+                        logger.Debug("Slot {0}: Waited successfully", slotNum);
                     }
                     else if (waitStatus == WaitingResult.TimeOut)
                     {
@@ -423,7 +423,7 @@ namespace TestLib.Worker
 
                     if (tester.Wait() == WaitingResult.Ok)
                     {
-                        logger.Info("Slot {0}: Waiting started", slotNum);
+                        logger.Debug("Slot {0}: Waited successfully", slotNum);
                     }
                     else
                     {
