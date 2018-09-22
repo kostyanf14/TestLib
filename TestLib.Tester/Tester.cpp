@@ -205,7 +205,7 @@ namespace Internal
 			}
 			else
 			{
-				usedResources.cpuWorkTimeMs = processTime * 1e6 / frequency.QuadPart;
+				usedResources.cpuWorkTimeMs = 1. * processTime / frequency.QuadPart;
 			}
 
 			JOBOBJECT_EXTENDED_LIMIT_INFORMATION exLimitInfo;
