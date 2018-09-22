@@ -201,7 +201,7 @@ namespace Internal
 			HANDLE h = CreateFileW(_fileName, rwMode, 0, &attr, openMode, FILE_ATTRIBUTE_NORMAL, nullptr);
 			if (h == INVALID_HANDLE_VALUE)
 			{
-				Internal::logger->Error(L"WinAPI error in " __FUNCTION__ " at line %d. CreateFileW failed error code %lu. File name = %S\n",
+				Internal::logger->Error(L"WinAPI error in " __FUNCTION__ " at line %d. CreateFileW failed error code %lu. File name = %s\n",
 					__LINE__, GetLastError(), _fileName);
 
 				return false;

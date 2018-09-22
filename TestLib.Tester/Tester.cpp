@@ -8,17 +8,17 @@ namespace Internal
 
 		if (!workDirSet || !programSet)
 		{
-			Internal::logger->Error(L"Can't start program w/o program name or workdirectory. workDirectory = '%S', program = '%S'", workDirectory, program);
+			Internal::logger->Error(L"Can't start program w/o program name or workdirectory. workDirectory = '%s', program = '%s'", workDirectory, program);
 
 			return false;
 		}
 		if (!realTimeLimitSet)
 		{
-			Internal::logger->Warning(L"Real time limit was not set. workDirectory = '%S', program = '%S'", workDirectory, program);
+			Internal::logger->Warning(L"Real time limit was not set. workDirectory = '%s', program = '%s'", workDirectory, program);
 		}
 		if (!memoryLimitSet)
 		{
-			Internal::logger->Warning(L"Memory limit was not set. workDirectory = '%S', program = '%S'", workDirectory, program);
+			Internal::logger->Warning(L"Memory limit was not set. workDirectory = '%s', program = '%s'", workDirectory, program);
 		}
 
 		HANDLE hProcessCreationToken = DuplicateCurrentProcessToken();
@@ -148,7 +148,7 @@ namespace Internal
 			usedResources.processExitCode = WAIT_TIMEOUT;
 			result = TestLib::WaitingResult::TimeOut;
 
-			Internal::logger->Error(L"Waiting program timeout expired. workDirectory = '%S', program = '%S'", workDirectory, program);
+			Internal::logger->Error(L"Waiting program timeout expired. workDirectory = '%s', program = '%s'", workDirectory, program);
 			break;
 		case WAIT_FAILED:
 			TerminateProcess(startupHandles.process, -1);
@@ -161,7 +161,7 @@ namespace Internal
 			usedResources.processExitCode = -1;
 			result = TestLib::WaitingResult::Fail;
 
-			Internal::logger->Error(L"Waiting program failed. workDirectory = '%S', program = '%S'", workDirectory, program);
+			Internal::logger->Error(L"Waiting program failed. workDirectory = '%s', program = '%s'", workDirectory, program);
 			break;
 
 		case WAIT_OBJECT_0:
@@ -173,7 +173,7 @@ namespace Internal
 			break;
 
 		default:
-			Internal::logger->Error(L"Error waiting process. Unknown status. status = %u, workDirectory = '%S', program = '%S'", waitCode, workDirectory, program);
+			Internal::logger->Error(L"Error waiting process. Unknown status. status = %u, workDirectory = '%s', program = '%s'", waitCode, workDirectory, program);
 			break;
 		}
 
