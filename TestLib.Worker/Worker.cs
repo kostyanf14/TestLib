@@ -267,7 +267,7 @@ namespace TestLib.Worker
 
             for (uint i = 0; i < problem.Tests.Length; i++)
             {
-                logger.Info("Slot {0}: Statring testing test with num {1}", slotNum, problem.Tests[i].Num);
+                logger.Info("Slot {0}: Starting testing test with num {1}", slotNum, problem.Tests[i].Num);
 
                 logger.Info("Slot {0}: Preparion solution start enviroment", slotNum);
                 logger.Info("Slot {0}: Copy input file.", slotNum);
