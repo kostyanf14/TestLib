@@ -1,4 +1,5 @@
 #include "Tester.h"
+#include <cmath>
 
 namespace Internal
 {
@@ -205,7 +206,7 @@ namespace Internal
 			}
 			else
 			{
-				usedResources.cpuWorkTimeMs = 1. * processTime / frequency.QuadPart;
+				usedResources.cpuWorkTimeMs = trunc(10. * processTime / frequency.QuadPart) / 10.;
 			}
 
 			JOBOBJECT_EXTENDED_LIMIT_INFORMATION exLimitInfo;
@@ -216,7 +217,7 @@ namespace Internal
 			}
 			else
 			{
-				usedResources.peakMemoryUsageKb = exLimitInfo.PeakJobMemoryUsed / 1024;
+				usedResources.peakMemoryUsageKb = trunc(10. * exLimitInfo.PeakJobMemoryUsed / 1024.) / 10.;
 			}
 		}
 
