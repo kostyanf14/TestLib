@@ -66,7 +66,7 @@ namespace Internal
 
 		if (!AssignProcessToJobObject(startupHandles.job, processInfo.hProcess))
 		{
-			//log->LogErrorLastSystemError(L"in " __FUNCTION__);
+			Internal::logger->Error(L"Can't assign process to job in " __FUNCTIONW__ " at line %d. AssignProcessToJobObject failed, error code %d", __LINE__, GetLastError());
 
 			TerminateProcess(processInfo.hProcess, -1);
 			SafeCloseHandle(&processInfo.hThread);
@@ -85,7 +85,7 @@ namespace Internal
 		BOOL res = FALSE;
 		if (!IsProcessInJob(processInfo.hProcess, startupHandles.job, &res) || !res)
 		{
-			//log->LogErrorLastSystemError(L"in " __FUNCTION__);
+			Internal::logger->Error(L"Process didnot assign to job in " __FUNCTIONW__ " at line %d. IsProcessInJob failed, error code %d", __LINE__, GetLastError());
 
 			TerminateProcess(processInfo.hProcess, -1);
 			SafeCloseHandle(&processInfo.hThread);
@@ -103,7 +103,7 @@ namespace Internal
 		startTime = GetTickCount();
 		if (ResumeThread(processInfo.hThread) == (DWORD)-1)
 		{
-			//log->LogErrorLastSystemError(L"Can't resume main thread in " __FUNCTION__);
+			Internal::logger->Error(L"Can't resume main thread in " __FUNCTIONW__ " at line %d. ResumeThread failed, error code %d", __LINE__, GetLastError());
 
 			TerminateProcess(processInfo.hProcess, -1);
 			SafeCloseHandle(&processInfo.hThread);
