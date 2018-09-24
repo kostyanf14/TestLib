@@ -54,7 +54,7 @@ namespace Internal
 
 		PROCESS_INFORMATION processInfo = {0};
 		BOOL result = CreateProcessAsUserW(hProcessCreationToken, program, args,
-			nullptr, nullptr, TRUE, CREATE_SUSPENDED | EXTENDED_STARTUPINFO_PRESENT | CREATE_NO_WINDOW,
+			nullptr, nullptr, TRUE, CREATE_SUSPENDED | EXTENDED_STARTUPINFO_PRESENT | CREATE_NO_WINDOW | CREATE_BREAKAWAY_FROM_JOB,
 			nullptr, workDirectory, (STARTUPINFOW*)&startupInfoEx, &processInfo);
 
 		if (!result)
