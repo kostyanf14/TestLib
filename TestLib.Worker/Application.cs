@@ -28,6 +28,7 @@ namespace TestLib.Worker
 		{
 			Logger logger = LogManager.GetCurrentClassLogger();
 			logger.Info("Application initialization started");
+
 			NameValueCollection config = ConfigurationManager.AppSettings;
 
 			FileProvider = new FileProvider(config.Get("cache_folder") ?? ".\\cache\\");
@@ -37,12 +38,17 @@ namespace TestLib.Worker
 			Requests = new BlockingQueue<RequestMessage>(config.Get("result_sending_cache_size").ToUInt32OrDefault(2048));
 
 			Configuration = new Configuration(config);
+
+			LoggerManaged = new LoggerManaged();
+			LoggerManaged.InitNativeLogger(new LoggerManaged.LogEventHandler(LogManager.GetLogger("Internal").Log));
 		}
+
 		public FileProvider FileProvider { get; private set; }
 		public ProblemCache Problems { get; private set; }
 		public BlockingQueue<RequestMessage> Requests { get; private set; }
 		public CompilerManager Compilers { get; private set; }
 
 		public Configuration Configuration { get; private set; }
+		public LoggerManaged LoggerManaged { get; private set; }
 	}
 }

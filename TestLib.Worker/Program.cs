@@ -42,7 +42,7 @@ namespace TestLib.Worker
 
 		static void startResultSending()
 		{
-			workerTasks[0] = workerTasks[0].Status == TaskStatus.Running ? workerTasks[0] : 
+			workerTasks[0] =  
 					Task.Run(() => SendResults(cancellationTokenSource.Token), cancellationTokenSource.Token);
 		}
 
@@ -51,7 +51,7 @@ namespace TestLib.Worker
 			for (uint i = 1; i <= Application.Get().Configuration.WorkerSlotCount; i++)
 			{
 				var s = new Slot(i, cancellationTokenSource.Token);
-				workerTasks[i] = workerTasks[i]?.Status == TaskStatus.Running ? workerTasks[i] :
+				workerTasks[i] =
 					Task.Run(() => s.Do(), cancellationTokenSource.Token);
 			}
 		}
@@ -59,10 +59,7 @@ namespace TestLib.Worker
 		private static void Main(string[] args)
 		{
 			Application app = Application.Get();
-			LoggerManaged loggerManaged = new LoggerManaged();
-
 			logger.Info("TestLib.Worker started");
-			loggerManaged.InitNativeLogger(new LoggerManaged.LogEventHandler(LogManager.GetLogger("Internal").Log));
 
 			workerTasks = new Task[app.Configuration.WorkerSlotCount + 1];
 			cancellationTokenSource = new CancellationTokenSource();
@@ -77,6 +74,7 @@ namespace TestLib.Worker
 				if (cmd == "exit")
 				{
 					cancellationTokenSource.Cancel();
+					Console.WriteLine("Waiting stoping all tasks");
 					break;
 				}
 
@@ -125,7 +123,7 @@ namespace TestLib.Worker
 			catch { }
 
 			cancellationTokenSource.Dispose();
-			loggerManaged.Destroy();
+			app.LoggerManaged.Destroy();
 		}
 	}
 }
