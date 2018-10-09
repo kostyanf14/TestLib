@@ -129,7 +129,7 @@ namespace TestLib.Worker
 		private static void ResetFileAttributes(string file)
 		{
 			if (File.Exists(file))
-				File.SetAttributes(file, System.IO.FileAttributes.Normal);
+				File.SetAttributes(file, FileAttributes.Normal);
 		}
 	}
 }
