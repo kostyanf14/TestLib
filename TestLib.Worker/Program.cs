@@ -18,13 +18,11 @@ namespace TestLib.Worker
 
 			token.Register(() => app.Requests.Enqueue(null));
 
-			while (!token.IsCancellationRequested)
+			while (true)
 			{
 				var request = app.Requests.Dequeue();
 				if (request is null)
-                {
 					break;
-				}
 
 				try
 				{
@@ -44,7 +42,7 @@ namespace TestLib.Worker
 
 		static void startResultSending()
 		{
-			workerTasks[0] =
+			workerTasks[0] = workerTasks[0].Status == TaskStatus.Running ? workerTasks[0] : 
 					Task.Run(() => SendResults(cancellationTokenSource.Token), cancellationTokenSource.Token);
 		}
 
@@ -53,7 +51,7 @@ namespace TestLib.Worker
 			for (uint i = 1; i <= Application.Get().Configuration.WorkerSlotCount; i++)
 			{
 				var s = new Slot(i, cancellationTokenSource.Token);
-				workerTasks[i] =
+				workerTasks[i] = workerTasks[i]?.Status == TaskStatus.Running ? workerTasks[i] :
 					Task.Run(() => s.Do(), cancellationTokenSource.Token);
 			}
 		}
@@ -72,7 +70,7 @@ namespace TestLib.Worker
 			startResultSending();
 			startSlots();
 
-			for (;;)
+			for (; ; )
 			{
 				var cmd = Console.ReadLine().ToLower();
 
