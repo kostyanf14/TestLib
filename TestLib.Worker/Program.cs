@@ -1,5 +1,7 @@
 ﻿using NLog;
 using System;
+using System.Diagnostics;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using TestLib.Worker.ClientApi;
@@ -72,6 +74,16 @@ namespace TestLib.Worker
 				Console.WriteLine("Task {0}: {1}", i, workerTasks[i]?.Status.ToString());
 		}
 
+		static Version version()
+		{
+			var assembly = Assembly.GetExecutingAssembly();
+			var fvi = FileVersionInfo.GetVersionInfo(assembly.Location);
+			Console.WriteLine("Version: {0}", fvi.ProductVersion);
+
+			return new Version(fvi.ProductMajorPart, fvi.ProductMinorPart,
+				fvi.ProductBuildPart, fvi.ProductPrivatePart);
+		}
+
 		private static void Main(string[] args)
 		{
 			Application app = Application.Get();
@@ -99,6 +111,12 @@ namespace TestLib.Worker
 				if (cmd == "stop")
 					stop();
 
+				if (cmd == "version")
+				{
+					version();
+					continue;
+				}
+
 				if (cmd == "clear problem")
 				{
 					app.Problems.Clear();
@@ -109,6 +127,6 @@ namespace TestLib.Worker
 			}
 
 			app.LoggerManaged.Destroy();
-		}		
+		}
 	}
 }
