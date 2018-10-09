@@ -41,7 +41,13 @@ namespace TestLib.Worker
 
 		public void RemoveProblem(Problem problem)
 		{
+			RemoveFile(problem.Checker);
 
+			foreach (var test in problem.Tests)
+			{
+				RemoveFile(test.Input);
+				RemoveFile(test.Answer);
+			}
 		}
 
 		public void SaveFile(ProblemFile file)
@@ -64,7 +70,7 @@ namespace TestLib.Worker
 		}
 		public void RemoveFile(ProblemFile file)
 		{
-			if (file.Content == null)
+			if (file.Content == null && file.id != null)
 				File.Delete(Path.Combine(directory, file.id));
 			else
 				file.Content = null;
