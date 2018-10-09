@@ -2,18 +2,27 @@
 using System.IO;
 using System.Xml;
 using System.Xml.Serialization;
+using NLog;
 
 namespace TestLib.Worker
 {
     internal class CompilerManager
     {
-        private string directory;
+		static Logger logger = LogManager.GetCurrentClassLogger();
+
 		private HashSet<byte> compilersIds = null;
 		private Dictionary<byte, Compiler> compilers = new Dictionary<byte, Compiler>();
 
         public CompilerManager(string _dir)
         {
-            directory = _dir;
+			logger.Info("Initialization started. Compiler directory {0}.", _dir);
+			if (!Directory.Exists(_dir))
+			{
+				logger.Error("Initialization failed. Directory does not exist.", _dir);
+
+				return;
+			}
+
 
             var files = Directory.GetFiles(_dir);
             foreach (var file in files)
@@ -21,7 +30,7 @@ namespace TestLib.Worker
                 var info = new FileInfo(file);
                 if (info.Extension != ".cfg")
                 {
-                    //Logger.Warning (bad file)
+					logger.Warn("Incorect compiler configuration file extension. File {0} was skipped", info.Name);
                     continue;
                 }
 

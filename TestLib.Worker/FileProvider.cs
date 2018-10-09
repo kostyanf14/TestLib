@@ -4,18 +4,24 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using NLog;
 
 namespace TestLib.Worker
 {
 	class FileProvider
 	{
+		static Logger logger = LogManager.GetCurrentClassLogger();
 		public FileProvider()
 		{
+			logger.Info("Initialization started");
+
 			directory = "c:\\cache\\";
 			CleanDirectory(directory);
 		}
 		public FileProvider(string _dir)
 		{
+			logger.Info("Initialization started");
+
 			directory = _dir;
 			CleanDirectory(directory);
 		}
