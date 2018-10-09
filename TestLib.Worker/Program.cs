@@ -40,20 +40,36 @@ namespace TestLib.Worker
 		static CancellationTokenSource cancellationTokenSource = null;
 		static Task[] workerTasks = null;
 
-		static void startResultSending()
+		static void start()
 		{
-			workerTasks[0] =  
-					Task.Run(() => SendResults(cancellationTokenSource.Token), cancellationTokenSource.Token);
-		}
+			cancellationTokenSource = new CancellationTokenSource();
 
-		static void startSlots()
-		{
+			workerTasks[0] =
+					Task.Run(() => SendResults(cancellationTokenSource.Token), cancellationTokenSource.Token);
+
 			for (uint i = 1; i <= Application.Get().Configuration.WorkerSlotCount; i++)
 			{
 				var s = new Slot(i, cancellationTokenSource.Token);
 				workerTasks[i] =
 					Task.Run(() => s.Do(), cancellationTokenSource.Token);
 			}
+		}
+		private static void stop()
+		{
+			cancellationTokenSource.Cancel();
+			writeStatus();
+
+			Console.WriteLine("Waiting stoping all tasks");
+			try
+			{ Task.WaitAll(workerTasks); }
+			catch { }
+		}
+
+		static void writeStatus()
+		{
+			Console.WriteLine("==========STATUS==========");
+			for (uint i = 0; i <= Application.Get().Configuration.WorkerSlotCount; i++)
+				Console.WriteLine("Task {0}: {1}", i, workerTasks[i]?.Status.ToString());
 		}
 
 		private static void Main(string[] args)
@@ -62,10 +78,7 @@ namespace TestLib.Worker
 			logger.Info("TestLib.Worker started");
 
 			workerTasks = new Task[app.Configuration.WorkerSlotCount + 1];
-			cancellationTokenSource = new CancellationTokenSource();
-
-			startResultSending();
-			startSlots();
+			start();
 
 			for (; ; )
 			{
@@ -73,57 +86,29 @@ namespace TestLib.Worker
 
 				if (cmd == "exit")
 				{
-					cancellationTokenSource.Cancel();
-					Console.WriteLine("Waiting stoping all tasks");
+					stop();
 					break;
 				}
 
 				if (cmd == "status")
-				{
-					for (uint i = 0; i <= app.Configuration.WorkerSlotCount; i++)
-						Console.WriteLine("Task {0}: {1}", i, workerTasks[i]?.Status.ToString());
-				}
+					writeStatus();
 
 				if (cmd == "start")
-				{
-					cancellationTokenSource = new CancellationTokenSource();
-					startResultSending();
-					startSlots();
-
-					for (uint i = 0; i <= app.Configuration.WorkerSlotCount; i++)
-						Console.WriteLine("Task {0}: {1}", i, workerTasks[i]?.Status.ToString());
-				}
+					start();
 
 				if (cmd == "stop")
-				{
-					cancellationTokenSource.Cancel();
-
-					for (uint i = 0; i <= app.Configuration.WorkerSlotCount; i++)
-						Console.WriteLine("Task {0}: {1}", i, workerTasks[i]?.Status.ToString());
-
-					Console.WriteLine("Waiting stoping all tasks");
-
-					try
-					{ Task.WaitAll(workerTasks); }
-					catch { }
-
-					for (uint i = 0; i <= app.Configuration.WorkerSlotCount; i++)
-						Console.WriteLine("Task {0}: {1}", i, workerTasks[i]?.Status.ToString());
-				}
+					stop();
 
 				if (cmd == "clear problem")
 				{
 					app.Problems.Clear();
 					Console.WriteLine("Problem cache was cleared");
 				}
+
+				writeStatus();
 			}
 
-			try
-			{ Task.WaitAll(workerTasks); }
-			catch { }
-
-			cancellationTokenSource.Dispose();
 			app.LoggerManaged.Destroy();
-		}
+		}		
 	}
 }
