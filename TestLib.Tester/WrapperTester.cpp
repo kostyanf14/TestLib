@@ -112,6 +112,11 @@ namespace TestLib
 	public ref class Tester
 	{
 	public:
+		static Tester()
+		{
+			Internal::Tester::Init();
+		}
+
 		Tester()
 		{
 			tester = new Internal::Tester();

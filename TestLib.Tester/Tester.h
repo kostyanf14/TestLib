@@ -67,6 +67,24 @@ namespace Internal
 	class Tester
 	{
 	public:
+		static ULONG current_processor;
+		static ULONG processor_count;
+
+		static void Init()
+		{
+			current_processor = 0;
+
+			const int buffer_size = 8;
+			wchar_t env_var_num_of_proc[buffer_size];
+			
+			if (GetEnvironmentVariableW(L"NUMBER_OF_PROCESSORS",
+				env_var_num_of_proc, sizeof(wchar_t) * buffer_size) == 0
+				|| GetLastError() == ERROR_ENVVAR_NOT_FOUND)
+				processor_count = 1;
+			else
+				processor_count = _wtoi(env_var_num_of_proc);
+		}
+
 		Tester()
 		{
 			programSet = false;
@@ -445,6 +463,29 @@ namespace Internal
 				&jobUILimits, sizeof(JOBOBJECT_BASIC_UI_RESTRICTIONS)))
 			{
 				Internal::logger->Error(L"WinAPI error in " __FUNCTION__ " at line %d. Can't set UI restrinctions. SetInformationJobObject failed error code %lu\n",
+					__LINE__, GetLastError());
+
+				return false;
+			}
+
+			return true;
+		}
+		bool applyAffinity()
+		{
+#if _WIN32_WINNT > _WIN32_WINNT_VISTA
+			if (!SetProcessAffinityUpdateMode(startupHandles.process, 0))
+			{
+				Internal::logger->Error(L"WinAPI error in " __FUNCTION__ " at line %d. Can't disables dynamic update of the process affinity by the system.\
+SetProcessAffinityUpdateMode failed error code %lu\n",
+__LINE__, GetLastError());
+
+				return false;
+			}
+#endif
+			ULONG proc = InterlockedIncrement(&current_processor);
+			if (!SetProcessAffinityMask(startupHandles.process, 1ull << (proc % processor_count)))
+			{
+				Internal::logger->Error(L"WinAPI error in " __FUNCTION__ " at line %d. Can't update the process affinity. SetProcessAffinityMask failed error code %lu\n",
 					__LINE__, GetLastError());
 
 				return false;

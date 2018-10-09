@@ -3,6 +3,9 @@
 
 namespace Internal
 {
+	ULONG Tester::current_processor = 0;
+	ULONG Tester::processor_count = 1;
+	
 	bool Tester::Run(bool useRestrictions)
 	{
 		Internal::logger->Debug(L"Called " __FUNCTIONW__);
@@ -62,6 +65,11 @@ namespace Internal
 			Internal::logger->Error(L"Can't create process in " __FUNCTIONW__ " at line %d. CreateProcessAsUserW failed, error code %d", __LINE__, GetLastError());
 
 			return false;
+		}
+
+		if (useRestrictions)
+		{
+			applyAffinity();
 		}
 
 		if (!AssignProcessToJobObject(startupHandles.job, processInfo.hProcess))
