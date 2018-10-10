@@ -9,15 +9,12 @@ namespace TestLib.Worker.ClientApi.Models
 {
 	internal class Submission
 	{
-		private string sourceUrlType;
-
 		public Submission() { }
 
-		public Submission(ulong id, string sourceUrl, string sourceUrlType, byte compilerId, byte checkerCompilerId, ulong problemId, DateTime problemUpdatedAt, uint memoryLimit, uint timeLimit)
+		public Submission(ulong id, string sourceUrl, byte compilerId, byte checkerCompilerId, ulong problemId, DateTime problemUpdatedAt, uint memoryLimit, uint timeLimit)
 		{
 			Id = id;
 			SourceUrl = sourceUrl ?? throw new ArgumentNullException(nameof(sourceUrl));
-			SourceUrlType = sourceUrlType;
 			CompilerId = compilerId;
 			CheckerCompilerId = checkerCompilerId;
 			ProblemId = problemId;
@@ -27,11 +24,10 @@ namespace TestLib.Worker.ClientApi.Models
             RealTimeLimit = 10 * TimeLimit;
         }
 
-        public Submission(ulong id, string sourceUrl, string sourceUrlType, byte compilerId, byte checkerCompilerId, ulong problemId, DateTime problemUpdatedAt, uint memoryLimit, uint timeLimit, uint realTimeLimit)
+        public Submission(ulong id, string sourceUrl, byte compilerId, byte checkerCompilerId, ulong problemId, DateTime problemUpdatedAt, uint memoryLimit, uint timeLimit, uint realTimeLimit)
         {
             Id = id;
             SourceUrl = sourceUrl ?? throw new ArgumentNullException(nameof(sourceUrl));
-            SourceUrlType = sourceUrlType;
             CompilerId = compilerId;
             CheckerCompilerId = checkerCompilerId;
             ProblemId = problemId;
@@ -43,12 +39,7 @@ namespace TestLib.Worker.ClientApi.Models
 
         public ulong Id { get; set; }
 		public string SourceUrl { get; set; }
-		public string SourceUrlType
-		{
-			get => sourceUrlType;
-			set => sourceUrlType = value is null ? "ralative" : value;
-			//NullOrWhitespace
-		}
+		
 		public byte CompilerId { get; set; }
 
 		public byte CheckerCompilerId { get; set; }

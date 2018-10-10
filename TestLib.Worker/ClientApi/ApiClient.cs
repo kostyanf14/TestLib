@@ -51,7 +51,6 @@ namespace TestLib.Worker.ClientApi
                             id: (ulong)parsedSubmissions[i]["id"],
                             sourceUrl: (string)parsedSubmissions[i]["source_url"],
                             compilerId: compilerId,
-                            sourceUrlType: (string)parsedSubmissions[i]["source_url_type"],
                             checkerCompilerId: checkerCompilerId,
                             problemId: (ulong)parsedSubmissions[i]["problem"]["id"],
                             problemUpdatedAt: (DateTime)parsedSubmissions[i]["problem"]["updated_at"],
@@ -70,24 +69,16 @@ namespace TestLib.Worker.ClientApi
         public IEnumerable<Submission> GetSuitableSubmissions(HashSet<byte> compilers)
             => readSubmissions(compilers);
 
-        private ProblemFile downloadFile(string url, string urlType = null)
+        private ProblemFile downloadFile(string url)
         {
-            Uri uri = null;
-            if (urlType is null || urlType is "ralative")
-            {
-                uri = new Uri(Application.Get().Configuration.BaseApiAddress, url);
-            }
-            else
-            {
-                uri = new Uri(url);
-            }
-
+            Uri uri = new Uri(Application.Get().Configuration.BaseApiAddress, url);
+          
             ProblemFile solution = new ProblemFile();
             solution.Content = client.GetAsync(uri).Result.Content.ReadAsByteArrayAsync().Result;
             return solution;
         }
         public ProblemFile DownloadSolution(Submission submission) =>
-            downloadFile(submission.SourceUrl, submission.SourceUrlType);
+            downloadFile(submission.SourceUrl);
 
         public Problem DownloadProblem(ulong problemId)
         {
@@ -103,24 +94,20 @@ namespace TestLib.Worker.ClientApi
                 t.Id = (UInt64)parsedProblem["tests"][i]["id"];
                 t.Num = (string)parsedProblem["tests"][i]["num"];
                 t.Input = downloadFile(
-                    (string)parsedProblem["tests"][i]["input_url"],
-                    (string)parsedProblem["tests"][i]["input_url_type"]
+                    (string)parsedProblem["tests"][i]["input_url"]
                 );
 
                 if (!(parsedProblem["tests"][i]["answer_url"] is null))
                 {
                     t.Answer = downloadFile(
-                    (string)parsedProblem["tests"][i]["answer_url"],
-                    (string)parsedProblem["tests"][i]["answer_url_type"]
+                    (string)parsedProblem["tests"][i]["answer_url"]
                 );
                 }
 
                 tests[i] = t;
             }
 
-            string checkerUrlType = (string)parsedProblem["checker_source_url_type"];
-            string checkerUrl = (string)parsedProblem["checker_source_url"];
-            ProblemFile checker = downloadFile(checkerUrl, checkerUrlType);
+            ProblemFile checker = downloadFile((string)parsedProblem["checker_source_url"]);
 
             return new Problem(
                 id: (ulong)parsedProblem["id"],
