@@ -243,7 +243,7 @@ namespace TestLib.Worker
                 log.Type = SubmissionLogType.Checker;
                 log.Data = File.ReadAllText(compilerLogFileFullPath);
 
-                Application.Get().Requests.Enqueue(apiClient.GetSendLogRequestMessage(log));
+                Application.Get().RequestMessages.Enqueue(apiClient.GetSendLogRequestMessage(log));
                 return WorkerResult.TestingError;
             }
 
@@ -256,7 +256,7 @@ namespace TestLib.Worker
 
                 if (!string.IsNullOrWhiteSpace(log.Data))
                 {
-                    Application.Get().Requests.Enqueue(apiClient.GetSendLogRequestMessage(log));
+                    Application.Get().RequestMessages.Enqueue(apiClient.GetSendLogRequestMessage(log));
                 }
 
                 if (!st)
@@ -318,7 +318,7 @@ namespace TestLib.Worker
                         testResult.WorkTime = tester.GetUsedResources().realTimeUsageMs;
 
                         testResult.Result = TestingResult.TimeLimitExceded;
-                        Application.Get().Requests.Enqueue(apiClient.GetSendTestingResultRequestMessage(testResult));
+                        Application.Get().RequestMessages.Enqueue(apiClient.GetSendTestingResultRequestMessage(testResult));
 
                         logger.Info("Slot {0}: Wait timeouted", slotNum);
 
@@ -343,7 +343,7 @@ namespace TestLib.Worker
                         testResult.WorkTime = tester.GetUsedResources().cpuWorkTimeMs;
 
                         testResult.Result = TestingResult.RunTimeError;
-                        Application.Get().Requests.Enqueue(apiClient.GetSendTestingResultRequestMessage(testResult));
+                        Application.Get().RequestMessages.Enqueue(apiClient.GetSendTestingResultRequestMessage(testResult));
 
                         logger.Info("Slot {0}: Solution exit with code {1}", slotNum, exitCode);
 
@@ -362,7 +362,7 @@ namespace TestLib.Worker
                 {
                     testResult.Result = TestingResult.TimeLimitExceded;
 
-                    Application.Get().Requests.Enqueue(apiClient.GetSendTestingResultRequestMessage(testResult));
+                    Application.Get().RequestMessages.Enqueue(apiClient.GetSendTestingResultRequestMessage(testResult));
 
                     logger.Info("Slot {0}: Solution work {1}ms and time limit {2}ms",
                         slotNum, testResult.WorkTime, submission.TimeLimit);
@@ -374,7 +374,7 @@ namespace TestLib.Worker
                 if (testResult.UsedMemmory > submission.MemoryLimit)
                 {
                     testResult.Result = TestingResult.MemoryLimitExceded;
-                    Application.Get().Requests.Enqueue(apiClient.GetSendTestingResultRequestMessage(testResult));
+                    Application.Get().RequestMessages.Enqueue(apiClient.GetSendTestingResultRequestMessage(testResult));
 
                     logger.Info("Slot {0}: Solution used {1}kb memory and memory limit {2}kb",
                         slotNum, testResult.UsedMemmory, submission.MemoryLimit);
@@ -437,7 +437,7 @@ namespace TestLib.Worker
                     testResult.Result = (TestingResult)exitCode;
                     testResult.Log = File.ReadAllText(reportFileFullPath);
 
-                    Application.Get().Requests.Enqueue(apiClient.GetSendTestingResultRequestMessage(testResult));
+                    Application.Get().RequestMessages.Enqueue(apiClient.GetSendTestingResultRequestMessage(testResult));
 
                     tester.Destroy();
                 }

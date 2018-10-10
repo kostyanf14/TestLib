@@ -68,10 +68,10 @@ namespace TestLib.Worker
                 {
                     case WorkerResult.Ok:
                     case WorkerResult.CompilerError:
-                        app.Requests.Enqueue(client.GetReleaseSubmissionsRequestMessage(submission.Id, result));
+                        app.RequestMessages.Enqueue(client.GetReleaseSubmissionsRequestMessage(submission.Id, result));
                         break;
                     case WorkerResult.TestingError:
-                        app.Requests.Enqueue(client.GetFailSubmissionsRequestMessage(submission.Id));
+                        app.RequestMessages.Enqueue(client.GetFailSubmissionsRequestMessage(submission.Id));
                         break;
                 }
                            
