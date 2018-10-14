@@ -58,6 +58,13 @@ namespace TestLib.Worker
 			if (!Compilers.Init())
 				return false;
 
+			if (Configuration.WorkerId == Guid.Empty)
+				if (!signUp())
+				{
+					logger.Error("Application sign up failed");
+					return false;
+				}
+
 			return true;
 		}
 
@@ -72,11 +79,13 @@ namespace TestLib.Worker
 
 		public void Start()
 		{
+			apiClient.SignIn(Configuration.WorkerId);
 			workerTasks.Start();
 		}
 		public void Stop()
 		{
 			workerTasks.Stop();
+			apiClient.SignOut(Configuration.WorkerId);
 		}
 		public void Restart()
 		{
@@ -84,6 +93,14 @@ namespace TestLib.Worker
 			Start();
 		}
 		public void Status() => workerTasks.Status();
+
+		private bool signUp()
+		{
+			WorkerInformation wi = new WorkerInformation(Configuration.WorkerName,
+				Dns.GetHostAddresses(Dns.GetHostName()).Select(ip => ip.ToString()).ToArray());
+
+			return (Configuration.WorkerId = apiClient.SignUp(wi)) != Guid.Empty;
+		}
 
 		#region Variables
 		public FileProvider FileProvider { get; private set; }

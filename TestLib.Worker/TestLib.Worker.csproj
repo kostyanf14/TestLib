@@ -60,10 +60,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ClientApi\ApiClient.cs" />
-    <Compile Include="ClientApi\ICodelabsApiClient.cs" />
+    <Compile Include="ClientApi\HttpCodelabsApiClient.cs" />
+    <Compile Include="ClientApi\IApiClient.cs" />
+    <Compile Include="ClientApi\Models\AliveInformation.cs" />
     <Compile Include="ClientApi\Models\RequestMessage.cs" />
     <Compile Include="ClientApi\Models\SubmissionLog.cs" />
+    <Compile Include="ClientApi\Models\WorkerInformation.cs" />
     <Compile Include="ObjectExtensions.cs" />
     <Compile Include="ClientApi\Models\Submission.cs" />
     <Compile Include="Application.cs" />

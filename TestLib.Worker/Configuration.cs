@@ -38,6 +38,21 @@ namespace TestLib.Worker
 			GetSubmissionDelayMs = config.Get("get_submission_delay").ToInt32OrDefault(500);
 			WorkerSlotCount = config.Get("worker_slot_count").ToUInt32OrDefault(1);
 
+			fid = Path.Combine(
+				Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+				Process.GetCurrentProcess().ProcessName);
+
+			if (!Directory.Exists(fid))
+				Directory.CreateDirectory(fid);
+
+			fid = Path.Combine(fid, "fid");
+
+			if (File.Exists(fid))
+				if (!Guid.TryParse(File.ReadAllText(fid), out _workerId))
+				{
+					File.Delete(fid);
+					_workerId = Guid.Empty;
+				}
 		}
 
 		public string WorkerName { get; }
@@ -56,5 +71,12 @@ namespace TestLib.Worker
 		public string CompilerLogFileName { get; }
 		public int GetSubmissionDelayMs { get; }
 		public uint WorkerSlotCount { get; }
+		public Guid WorkerId
+		{
+			get => _workerId;
+			set => File.WriteAllText(fid, (_workerId = value).ToString());
+		}
+
+		private string fid;
 	}
 }
