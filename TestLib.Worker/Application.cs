@@ -92,7 +92,12 @@ namespace TestLib.Worker
 			Stop();
 			Start();
 		}
-		public void Status() => workerTasks.Status();
+		public void Status() => workerTasks.PrintStatus();
+		public void End()
+		{
+			Stop();
+			workerTasks.End();
+		}
 
 		private bool signUp()
 		{

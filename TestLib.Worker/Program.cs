@@ -39,7 +39,7 @@ namespace TestLib.Worker
 				}
 			}
 
-			app.Stop();
+			app.End();
 			app.LoggerManaged.Destroy();
 		}
 	}
