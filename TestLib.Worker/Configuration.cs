@@ -23,7 +23,7 @@ namespace TestLib.Worker
 			FileCacheFolder = config.Get("cache_folder") ?? ".\\cache\\";
 			CompilersConfigFolder = config.Get("compilers_config_folder") ?? ".\\compilers\\";
 			ProblemsCacheSize = config.Get("problems_cache_size").ToUInt32OrDefault(1);
-			ResultSendingCacheSize = config.Get("result_sending_cache_size").ToUInt32OrDefault(2048));
+			ResultSendingCacheSize = config.Get("result_sending_cache_size").ToUInt32OrDefault(2048);
 
 			BaseAddress = new Uri(config.Get("base_address") ?? "http://localhost:8080/");
 			BaseApiAddress = new Uri(BaseAddress, config.Get("api_path") ?? "/api");
