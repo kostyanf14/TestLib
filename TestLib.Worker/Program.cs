@@ -11,6 +11,7 @@ namespace TestLib.Worker
 		{
 			logger.Info("TestLib.Worker started");
 			Application app = Application.Get();
+			app.Init();
 
 			app.Start();
 
