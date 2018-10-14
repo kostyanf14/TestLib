@@ -4,6 +4,7 @@ using System.Collections.Specialized;
 using System.Configuration;
 using System.Diagnostics;
 using System.Linq;
+using System.Net;
 using System.Reflection;
 using System.Text;
 using System.Threading;
@@ -30,24 +31,36 @@ namespace TestLib.Worker
 
 		private Application()
 		{
-			Logger logger = LogManager.GetCurrentClassLogger();
+			logger = LogManager.GetCurrentClassLogger();
 			logger.Info("Application initialization started. Version: {0}", Version());
 
+			LoggerManaged = new LoggerManaged();
+			apiClient = new HttpCodelabsApiClient();
+
 			NameValueCollection config = ConfigurationManager.AppSettings;
-
-			FileProvider = new FileProvider(config.Get("cache_folder") ?? ".\\cache\\");
-			Compilers = new CompilerManager(config.Get("compilers_config_folder") ?? ".\\compilers\\");
-
-			Problems = new ProblemCache(config.Get("problems_cache_size").ToUInt32OrDefault(1));
-			RequestMessages = new BlockingQueue<RequestMessage>(config.Get("result_sending_cache_size").ToUInt32OrDefault(2048));
-
 			Configuration = new Configuration(config);
 
-			LoggerManaged = new LoggerManaged();
-			LoggerManaged.InitNativeLogger(new LoggerManaged.LogEventHandler(LogManager.GetLogger("Internal").Log));
+			FileProvider = new FileProvider(Configuration.FileCacheFolder);
+			Compilers = new CompilerManager(Configuration.CompilersConfigFolder);
+
+			Problems = new ProblemCache(Configuration.ProblemsCacheSize);
+			RequestMessages = new BlockingQueue<RequestMessage>(Configuration.ResultSendingCacheSize);
 
 			workerTasks = new WorkerTaskManager(Configuration);
 		}
+
+		public bool Init()
+		{
+			LoggerManaged.InitNativeLogger(new LoggerManaged.LogEventHandler(LogManager.GetLogger("Native").Log));
+
+			FileProvider.Init();
+
+			if (!Compilers.Init())
+				return false;
+
+			return true;
+		}
+
 		public Version Version()
 		{
 			var assembly = Assembly.GetExecutingAssembly();
@@ -57,11 +70,20 @@ namespace TestLib.Worker
 				fvi.ProductBuildPart, fvi.ProductPrivatePart);
 		}
 
-		public void Start() => workerTasks.Start();
-		public void Stop() => workerTasks.Stop();
-		public void Restart() => workerTasks.Restart();
+		public void Start()
+		{
+			workerTasks.Start();
+		}
+		public void Stop()
+		{
+			workerTasks.Stop();
+		}
+		public void Restart()
+		{
+			Stop();
+			Start();
+		}
 		public void Status() => workerTasks.Status();
-
 
 		#region Variables
 		public FileProvider FileProvider { get; private set; }
@@ -73,6 +95,8 @@ namespace TestLib.Worker
 		public LoggerManaged LoggerManaged { get; private set; }
 
 		private WorkerTaskManager workerTasks;
+		private IApiClient apiClient;
+		private Logger logger;
 		#endregion
 	}
 }

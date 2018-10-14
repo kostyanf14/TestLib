@@ -10,22 +10,27 @@ namespace TestLib.Worker
 {
 	class FileProvider
 	{
+		public readonly string directory;
 		static Logger logger = LogManager.GetCurrentClassLogger();
 		public FileProvider()
 		{
-			logger.Info("Initialization started");
+			logger.Debug("ctor");
 
 			directory = "c:\\cache\\";
-			CleanDirectory(directory);
 		}
 		public FileProvider(string _dir)
 		{
-			logger.Info("Initialization started");
+			logger.Debug("ctor");
 
 			directory = _dir;
+		}
+
+		public void Init()
+		{
+			logger.Info("Initialization started");
+
 			CleanDirectory(directory);
 		}
-		public readonly string directory;
 
 		public void SaveProblem(Problem problem)
 		{

@@ -6,14 +6,24 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Collections.Specialized;
+using System.Diagnostics;
 
 namespace TestLib.Worker
 {
 	internal class Configuration
 	{
+		private Guid _workerId;
+
 		public Configuration(NameValueCollection config)
 		{
+			WorkerName = config.Get("worker_name") ?? "TestLib.Worker";
+
 			TestingWorkDirectory = config.Get("workarea") ?? ".\\workarea\\";
+
+			FileCacheFolder = config.Get("cache_folder") ?? ".\\cache\\";
+			CompilersConfigFolder = config.Get("compilers_config_folder") ?? ".\\compilers\\";
+			ProblemsCacheSize = config.Get("problems_cache_size").ToUInt32OrDefault(1);
+			ResultSendingCacheSize = config.Get("result_sending_cache_size").ToUInt32OrDefault(2048));
 
 			BaseAddress = new Uri(config.Get("base_address") ?? "http://localhost:8080/");
 			BaseApiAddress = new Uri(BaseAddress, config.Get("api_path") ?? "/api");
@@ -27,19 +37,24 @@ namespace TestLib.Worker
 
 			GetSubmissionDelayMs = config.Get("get_submission_delay").ToInt32OrDefault(500);
 			WorkerSlotCount = config.Get("worker_slot_count").ToUInt32OrDefault(1);
+
 		}
 
-		public string TestingWorkDirectory { get; private set; }
-
-		public Uri BaseAddress { get; private set; }
-		public Uri BaseApiAddress { get; private set; }
-		public string ApiAuthToken { get; private set; }
-		public string InputFileName { get; private set; }
-		public string OutputFileName { get; private set; }
-		public string AnswerFileName { get; private set; }
-		public string ReportFileName { get; private set; }
-		public string CompilerLogFileName { get; private set; }
-		public int GetSubmissionDelayMs { get; private set; }
-		public uint WorkerSlotCount { get; private set; }
+		public string WorkerName { get; }
+		public string TestingWorkDirectory { get; }
+		public string FileCacheFolder { get; }
+		public string CompilersConfigFolder { get; }
+		public uint ProblemsCacheSize { get; }
+		public uint ResultSendingCacheSize { get; }
+		public Uri BaseAddress { get; }
+		public Uri BaseApiAddress { get; }
+		public string ApiAuthToken { get; }
+		public string InputFileName { get; }
+		public string OutputFileName { get; }
+		public string AnswerFileName { get; }
+		public string ReportFileName { get; }
+		public string CompilerLogFileName { get; }
+		public int GetSubmissionDelayMs { get; }
+		public uint WorkerSlotCount { get; }
 	}
 }

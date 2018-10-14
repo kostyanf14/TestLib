@@ -53,11 +53,6 @@ namespace TestLib.Worker
 
 			started = false;
 		}
-		public void Restart()
-		{
-			Stop();
-			Start();
-		}
 
 		#region Privates
 		private void StartSendingTestingResult()
