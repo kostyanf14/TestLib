@@ -17,7 +17,8 @@ namespace TestLib.Worker.ClientApi.Models
 		Disabled = 0,
 		Ok = 1,
 		Failed = 2,
-		Stale = 3
+		Stale = 3,
+		Stopped = 4,
 	}
 
 	internal class WorkerInformation

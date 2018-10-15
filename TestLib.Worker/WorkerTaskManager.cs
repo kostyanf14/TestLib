@@ -163,7 +163,7 @@ namespace TestLib.Worker
 			{
 				try
 				{
-					int disabled = 0;
+					int stopped = 0;
 					int failed = 0;
 
 					foreach (var item in workerTasks)
@@ -175,7 +175,7 @@ namespace TestLib.Worker
 							case TaskStatus.WaitingToRun:
 							case TaskStatus.Canceled:
 							case TaskStatus.Created:
-								disabled++;
+								stopped++;
 								break;
 							case TaskStatus.Faulted:
 							default:
@@ -187,8 +187,8 @@ namespace TestLib.Worker
 					WorkerStatus status;
 					if (failed > 0)
 						status = WorkerStatus.Failed;
-					else if (disabled > 0)
-						status = WorkerStatus.Disabled;
+					else if (stopped > 0)
+						status = WorkerStatus.Stopped;
 					else
 						status = WorkerStatus.Ok;
 
