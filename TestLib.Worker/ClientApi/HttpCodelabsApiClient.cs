@@ -161,8 +161,9 @@ namespace TestLib.Worker.ClientApi
 
 			if (responseMessage.StatusCode != HttpStatusCode.NoContent)
 			{
-				logger.Error("Request {0} server error message: {1}", message.RequestUri,
-					responseMessage.Content?.ReadAsStringAsync()?.Result);
+				logger.Error("Request {0} server error message: {1}. Status code: {2}", message.RequestUri,
+					responseMessage.Content?.ReadAsStringAsync()?.Result,
+					responseMessage.StatusCode);
 			}
 
 			return responseMessage.StatusCode == HttpStatusCode.NoContent;
@@ -185,7 +186,8 @@ namespace TestLib.Worker.ClientApi
 
 			if (responseMessage.StatusCode != HttpStatusCode.Created)
 			{
-				logger.Error("Sign up failed. Error message: {0}",
+				logger.Error("Sign up failed. Status code: {0}. Error message: {1}",
+					responseMessage.StatusCode,
 					responseMessage.Content?.ReadAsStringAsync()?.Result);
 
 				return Guid.Empty;
@@ -207,8 +209,9 @@ namespace TestLib.Worker.ClientApi
 
 			if (responseMessage.StatusCode != HttpStatusCode.NoContent)
 			{
-				logger.Error("Sign in failed with error message: {0}",
-					responseMessage.Content?.ReadAsStringAsync()?.Result);
+				logger.Error("Sign in failed with error message: {0}. Status code: {1}",
+					responseMessage.Content?.ReadAsStringAsync()?.Result,
+					responseMessage.StatusCode);
 			}
 
 			return responseMessage.StatusCode == HttpStatusCode.NoContent;
@@ -224,8 +227,9 @@ namespace TestLib.Worker.ClientApi
 
 			if (responseMessage.StatusCode != HttpStatusCode.NoContent)
 			{
-				logger.Error("Sign out failed with error message: {0}",
-					responseMessage.Content?.ReadAsStringAsync()?.Result);
+				logger.Error("Sign out failed with error message: {0}. Status code: {1}",
+					responseMessage.Content?.ReadAsStringAsync()?.Result,
+					responseMessage.StatusCode);
 			}
 
 			return responseMessage.StatusCode == HttpStatusCode.NoContent;
@@ -243,7 +247,8 @@ namespace TestLib.Worker.ClientApi
 
 			if (responseMessage.StatusCode != HttpStatusCode.Created)
 			{
-				logger.Error("Alive failed. Error message: {0}",
+				logger.Error("Alive failed. Status code: {0}. Error message: {1}",
+					responseMessage.StatusCode,
 					responseMessage.Content?.ReadAsStringAsync()?.Result);
 			}
 
