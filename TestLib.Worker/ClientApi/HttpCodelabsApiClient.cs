@@ -242,10 +242,10 @@ namespace TestLib.Worker.ClientApi
 				endpoint, new { alive }.AsJson()).Result;
 
 			logger.Debug("Alive request was send {0}",
-			   responseMessage.StatusCode == HttpStatusCode.Created ?
+			   responseMessage.StatusCode == HttpStatusCode.NoContent ?
 			   "successfully" : "failed");
 
-			if (responseMessage.StatusCode != HttpStatusCode.Created)
+			if (responseMessage.StatusCode != HttpStatusCode.NoContent)
 			{
 				logger.Error("Alive failed. Status code: {0}. Error message: {1}",
 					responseMessage.StatusCode,
