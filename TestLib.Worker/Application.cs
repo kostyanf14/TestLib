@@ -65,6 +65,12 @@ namespace TestLib.Worker
 					return false;
 				}
 
+			if (!apiClient.SignIn(Configuration.WorkerId))
+			{
+				logger.Error("Application sign in failed");
+				return false;
+			}
+
 			return true;
 		}
 
@@ -79,13 +85,11 @@ namespace TestLib.Worker
 
 		public void Start()
 		{
-			apiClient.SignIn(Configuration.WorkerId);
 			workerTasks.Start();
 		}
 		public void Stop()
 		{
 			workerTasks.Stop();
-			apiClient.SignOut(Configuration.WorkerId);
 		}
 		public void Restart()
 		{
@@ -97,6 +101,7 @@ namespace TestLib.Worker
 		{
 			Stop();
 			workerTasks.End();
+			apiClient.SignOut(Configuration.WorkerId);
 		}
 
 		private bool signUp()
