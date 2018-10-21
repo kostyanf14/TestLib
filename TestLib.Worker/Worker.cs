@@ -312,12 +312,12 @@ namespace TestLib.Worker
                     {
                         logger.Debug("Slot {0}: Waited successfully", slotNum);
                     }
-                    else if (waitStatus == WaitingResult.TimeOut)
+                    else if (waitStatus == WaitingResult.Timeout)
                     {
-                        testResult.UsedMemmory = tester.GetUsedResources().peakMemoryUsageKb;
-                        testResult.WorkTime = tester.GetUsedResources().realTimeUsageMs;
+                        testResult.UsedMemmory = tester.GetUsedResources().PeakMemoryUsageKB;
+                        testResult.WorkTime = tester.GetUsedResources().RealTimeUsageMS;
 
-                        testResult.Result = TestingResult.TimeLimitExceded;
+                        testResult.Result = TestingResult.TimeLimitExceeded;
                         Application.Get().RequestMessages.Enqueue(apiClient.GetSendTestingResultRequestMessage(testResult));
 
                         logger.Info("Slot {0}: Wait timeouted", slotNum);
@@ -339,10 +339,10 @@ namespace TestLib.Worker
                     }
                     else
                     {
-                        testResult.UsedMemmory = tester.GetUsedResources().peakMemoryUsageKb;
-                        testResult.WorkTime = tester.GetUsedResources().cpuWorkTimeMs;
+                        testResult.UsedMemmory = tester.GetUsedResources().PeakMemoryUsageKB;
+                        testResult.WorkTime = tester.GetUsedResources().CPUWorkTimeMS;
 
-                        testResult.Result = TestingResult.RunTimeError;
+                        testResult.Result = TestingResult.RuntimeError;
                         Application.Get().RequestMessages.Enqueue(apiClient.GetSendTestingResultRequestMessage(testResult));
 
                         logger.Info("Slot {0}: Solution exit with code {1}", slotNum, exitCode);
@@ -351,16 +351,16 @@ namespace TestLib.Worker
                         tester.Destroy();
                         continue;
                     }
-
-                    testResult.UsedMemmory = tester.GetUsedResources().peakMemoryUsageKb;
-                    testResult.WorkTime = tester.GetUsedResources().cpuWorkTimeMs;
+					
+                    testResult.UsedMemmory = tester.GetUsedResources().PeakMemoryUsageKB;
+                    testResult.WorkTime = tester.GetUsedResources().CPUWorkTimeMS;
 
                     tester.Destroy();
                 }
 
                 if (testResult.WorkTime > submission.TimeLimit)
                 {
-                    testResult.Result = TestingResult.TimeLimitExceded;
+                    testResult.Result = TestingResult.TimeLimitExceeded;
 
                     Application.Get().RequestMessages.Enqueue(apiClient.GetSendTestingResultRequestMessage(testResult));
 
@@ -373,7 +373,7 @@ namespace TestLib.Worker
 
                 if (testResult.UsedMemmory > submission.MemoryLimit)
                 {
-                    testResult.Result = TestingResult.MemoryLimitExceded;
+                    testResult.Result = TestingResult.MemoryLimitExceeded;
                     Application.Get().RequestMessages.Enqueue(apiClient.GetSendTestingResultRequestMessage(testResult));
 
                     logger.Info("Slot {0}: Solution used {1}kb memory and memory limit {2}kb",

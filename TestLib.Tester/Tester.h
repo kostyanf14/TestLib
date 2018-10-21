@@ -34,27 +34,27 @@ namespace TestLib
 		BadTest = 6,
 		UnexpectedEof = 8,
 		CompilerError = 9,
-		RunTimeError = 10,
+		RuntimeError = 10,
 		TestingError = 13,
-		MemoryLimitExceded = 14,
-		TimeLimitExceded = 15,
-		PartillyCorrect = 16
+		MemoryLimitExceeded = 14,
+		TimeLimitExceeded = 15,
+		PartiallyCorrect = 16
 	};
 
 	public enum class WaitingResult
 	{
 		Ok,
-		TimeOut,
+		Timeout,
 		Fail,
 	};
 
 	public value class UsedResources
 	{
 	public:
-		double realTimeUsageMs;
-		double cpuWorkTimeMs;
-		double peakMemoryUsageKb;
-		uint32 processExitCode;
+		double RealTimeUsageMS;
+		double CPUWorkTimeMS;
+		double PeakMemoryUsageKB;
+		uint32 ProcessExitCode;
 	};
 }
 
@@ -103,10 +103,10 @@ namespace Internal
 			limits.realTimeLimitMs = 0;
 			limits.memoryLimitKb = 0;
 
-			usedResources.cpuWorkTimeMs = 0;
-			usedResources.peakMemoryUsageKb = 0;
-			usedResources.processExitCode = 0;
-			usedResources.realTimeUsageMs = 0;
+			usedResources.CPUWorkTimeMS = 0;
+			usedResources.PeakMemoryUsageKB = 0;
+			usedResources.ProcessExitCode = 0;
+			usedResources.RealTimeUsageMS = 0;
 
 			program = nullptr;
 			args = nullptr;
@@ -137,10 +137,10 @@ namespace Internal
 			limits.realTimeLimitMs = 0;
 			limits.memoryLimitKb = 0;
 
-			usedResources.cpuWorkTimeMs = 0;
-			usedResources.peakMemoryUsageKb = 0;
-			usedResources.processExitCode = 0;
-			usedResources.realTimeUsageMs = 0;
+			usedResources.CPUWorkTimeMS = 0;
+			usedResources.PeakMemoryUsageKB = 0;
+			usedResources.ProcessExitCode = 0;
+			usedResources.RealTimeUsageMS = 0;
 
 			//free(program);
 			//free(args);
@@ -317,7 +317,7 @@ namespace Internal
 
 		bool Run(bool useRestrictions = false);
 		TestLib::WaitingResult Wait();
-		void CloseIoRedirectionHandles();
+		void CloseIORedirectionHandles();
 
 		uint32 GetRunResult()
 		{
@@ -325,7 +325,7 @@ namespace Internal
 		}
 		uint32 GetExitCode()
 		{
-			return usedResources.processExitCode;
+			return usedResources.ProcessExitCode;
 		}
 
 		TestLib::UsedResources GetUsedResources()

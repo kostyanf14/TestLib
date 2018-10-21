@@ -13,7 +13,7 @@ namespace TestLib
 	class NativeLogCallbackHandler
 	{
 	public:
-		NativeLogCallbackHandler(ref class LoggerManaged^ _owner);
+		NativeLogCallbackHandler(ref class LoggerManaged^ owner);
 	private:
 		static void OnLog(Internal::Logger & log, const uint8 level, const wchar_t * message, void * userData);
 		msclr::gcroot<LoggerManaged^> owner;
@@ -63,9 +63,9 @@ namespace TestLib
 			nativeHandler = nullptr;
 		}
 
-		void InitNativeLogger(LogEventHandler ^ _logger)
+		void InitNativeLogger(LogEventHandler ^ logger)
 		{
-			this->Log += _logger;
+			this->Log += logger;
 
 			Internal::logger = this->GetNative();
 			Internal::logger->Debug(L"Check native log from " __FUNCTIONW__);
@@ -122,81 +122,81 @@ namespace TestLib
 			tester = new Internal::Tester();
 		}
 
-		void SetProgram(String ^ _program, String ^ _args)
+		void SetProgram(String ^ program, String ^ args)
 		{
 			using namespace Runtime::InteropServices;
 
-			const wchar_t* program = (const wchar_t*)(Marshal::StringToHGlobalUni(_program)).ToPointer();
-			const wchar_t* args = (const wchar_t*)(Marshal::StringToHGlobalUni(_args)).ToPointer();
+			const wchar_t* program_native = (const wchar_t*)(Marshal::StringToHGlobalUni(program)).ToPointer();
+			const wchar_t* args_native = (const wchar_t*)(Marshal::StringToHGlobalUni(args)).ToPointer();
 
-			tester->SetProgram(program, args);
+			tester->SetProgram(program_native, args_native);
 
-			Marshal::FreeHGlobal(IntPtr((void*)program));
-			Marshal::FreeHGlobal(IntPtr((void*)args));
+			Marshal::FreeHGlobal(IntPtr((void*)program_native));
+			Marshal::FreeHGlobal(IntPtr((void*)args_native));
 		}
 
-		void SetWorkDirectory(String ^ _dir)
+		void SetWorkDirectory(String ^ directory)
 		{
 			using namespace Runtime::InteropServices;
 
-			const wchar_t* dir = (const wchar_t*)(Marshal::StringToHGlobalUni(_dir)).ToPointer();
-			tester->SetWorkDirectory(dir);
+			const wchar_t* directory_native = (const wchar_t*)(Marshal::StringToHGlobalUni(directory)).ToPointer();
+			tester->SetWorkDirectory(directory_native);
 
-			Marshal::FreeHGlobal(IntPtr((void*)dir));
+			Marshal::FreeHGlobal(IntPtr((void*)directory_native));
 		}
 
-		void SetRealTimeLimit(UInt32 _timeMs)
+		void SetRealTimeLimit(UInt32 timeMS)
 		{
-			tester->SetRealTimeLimit(_timeMs);
+			tester->SetRealTimeLimit(timeMS);
 		}
 
-		void SetMemoryLimit(UInt32 _memoryKb)
+		void SetMemoryLimit(UInt32 memoryKB)
 		{
-			tester->SetMemoryLimit(_memoryKb);
+			tester->SetMemoryLimit(memoryKB);
 		}
 
-		void RedirectIOHandleToFile(IOHandleType _handleType, String ^ _fileName)
+		void RedirectIOHandleToFile(IOHandleType handleType, String ^ fileName)
 		{
-			if (_fileName == nullptr)
-				throw gcnew ArgumentNullException(nameof(_fileName));
+			if (fileName == nullptr)
+				throw gcnew ArgumentNullException(nameof(fileName));
 
 			using namespace Runtime::InteropServices;
 
-			const wchar_t* fileName = (const wchar_t*)(Marshal::StringToHGlobalUni(_fileName)).ToPointer();
+			const wchar_t* fileName_native = (const wchar_t*)(Marshal::StringToHGlobalUni(fileName)).ToPointer();
 
-			tester->RedirectIOHandleToFile(_handleType, fileName);
+			tester->RedirectIOHandleToFile(handleType, fileName_native);
 
-			Marshal::FreeHGlobal(IntPtr((void*)fileName));
+			Marshal::FreeHGlobal(IntPtr((void*)fileName_native));
 		}
 
-		Boolean RedirectIOHandleToHandle(IOHandleType _handleType, void * _handle, bool _duplicate)
+		Boolean RedirectIOHandleToHandle(IOHandleType handleType, void * handle, bool duplicate)
 		{
-			if (_handle == nullptr)
-				throw gcnew ArgumentNullException(nameof(_handle));
+			if (handle == nullptr)
+				throw gcnew ArgumentNullException(nameof(handle));
 
-			return tester->RedirectIOHandleToHandle(_handleType, _handle, _duplicate);
+			return tester->RedirectIOHandleToHandle(handleType, handle, duplicate);
 		}
-		Boolean RedirectIOHandleToHandle(IOHandleType _handleType, void * _handle)
+		Boolean RedirectIOHandleToHandle(IOHandleType handleType, void * handle)
 		{
-			return RedirectIOHandleToHandle(_handleType, _handle, false);
+			return RedirectIOHandleToHandle(handleType, handle, false);
 		}
-		Boolean RedirectIOHandleToHandle(IOHandleType _handleType, IntPtr ^ _handle, bool _duplicate)
+		Boolean RedirectIOHandleToHandle(IOHandleType handleType, IntPtr ^ handle, bool duplicate)
 		{
-			return RedirectIOHandleToHandle(_handleType, _handle->ToPointer(), _duplicate);
+			return RedirectIOHandleToHandle(handleType, handle->ToPointer(), duplicate);
 		}
-		Boolean RedirectIOHandleToHandle(IOHandleType _handleType, IntPtr ^ _handle)
+		Boolean RedirectIOHandleToHandle(IOHandleType handleType, IntPtr ^ handle)
 		{
-			return RedirectIOHandleToHandle(_handleType, _handle, false);
-		}
-
-		IntPtr ^ GetIORedirectedHandle(IOHandleType _handleType)
-		{
-			return gcnew IntPtr(tester->GetIORedirectedHandle(_handleType));
+			return RedirectIOHandleToHandle(handleType, handle, false);
 		}
 
-		Boolean Run(Boolean _useRestrictions)
+		IntPtr ^ GetIORedirectedHandle(IOHandleType handleType)
 		{
-			return tester->Run(_useRestrictions);
+			return gcnew IntPtr(tester->GetIORedirectedHandle(handleType));
+		}
+
+		Boolean Run(Boolean useRestrictions)
+		{
+			return tester->Run(useRestrictions);
 		}
 		Boolean Run()
 		{
@@ -208,9 +208,9 @@ namespace TestLib
 			return tester->Wait();
 		}
 
-		void CloseIoRedirectionHandles()
+		void CloseIORedirectionHandles()
 		{
-			tester->CloseIoRedirectionHandles();
+			tester->CloseIORedirectionHandles();
 		}
 
 		UInt32 GetRunResult()
@@ -237,7 +237,7 @@ namespace TestLib
 
 		static LoggerManaged ^ loggerManaged;
 	};
-	inline NativeLogCallbackHandler::NativeLogCallbackHandler(LoggerManaged ^ _owner) : owner(_owner)
+	inline NativeLogCallbackHandler::NativeLogCallbackHandler(LoggerManaged ^ owner) : owner(owner)
 	{
 		owner->GetNative()->SetCallback(&OnLog, this);
 	}

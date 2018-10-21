@@ -153,9 +153,9 @@ namespace Internal
 			TerminateJobObject(startupHandles.job, -1);
 			SafeCloseHandle(&startupHandles.job);
 
-			usedResources.realTimeUsageMs = limits.realTimeLimitMs + 1;
-			usedResources.processExitCode = WAIT_TIMEOUT;
-			result = TestLib::WaitingResult::TimeOut;
+			usedResources.RealTimeUsageMS = limits.realTimeLimitMs + 1;
+			usedResources.ProcessExitCode = WAIT_TIMEOUT;
+			result = TestLib::WaitingResult::Timeout;
 
 			Internal::logger->Error(L"Waiting program timeout expired. workDirectory = '%s', program = '%s'", workDirectory, program);
 			break;
@@ -167,14 +167,14 @@ namespace Internal
 			TerminateJobObject(startupHandles.job, -1);
 			SafeCloseHandle(&startupHandles.job);
 
-			usedResources.processExitCode = -1;
+			usedResources.ProcessExitCode = -1;
 			result = TestLib::WaitingResult::Fail;
 
 			Internal::logger->Error(L"Waiting program failed. workDirectory = '%s', program = '%s'", workDirectory, program);
 			break;
 
 		case WAIT_OBJECT_0:
-			GetExitCodeProcess(startupHandles.process, &usedResources.processExitCode);
+			GetExitCodeProcess(startupHandles.process, &usedResources.ProcessExitCode);
 
 			result = TestLib::WaitingResult::Ok;
 
@@ -186,7 +186,7 @@ namespace Internal
 			break;
 		}
 
-		usedResources.realTimeUsageMs = static_cast<uint32>(GetTickCount() - startTime);
+		usedResources.RealTimeUsageMS = static_cast<uint32>(GetTickCount() - startTime);
 
 		if (startupHandles.job != INVALID_HANDLE_VALUE)
 		{
@@ -214,7 +214,7 @@ namespace Internal
 			}
 			else
 			{
-				usedResources.cpuWorkTimeMs = trunc(10. * processTime / frequency.QuadPart) / 10.;
+				usedResources.CPUWorkTimeMS = trunc(10. * processTime / frequency.QuadPart) / 10.;
 			}
 
 			JOBOBJECT_EXTENDED_LIMIT_INFORMATION exLimitInfo;
@@ -225,13 +225,13 @@ namespace Internal
 			}
 			else
 			{
-				usedResources.peakMemoryUsageKb = trunc(10. * exLimitInfo.PeakJobMemoryUsed / 1024.) / 10.;
+				usedResources.PeakMemoryUsageKB = trunc(10. * exLimitInfo.PeakJobMemoryUsed / 1024.) / 10.;
 			}
 		}
 
 		return result;
 	}
-	void Tester::CloseIoRedirectionHandles()
+	void Tester::CloseIORedirectionHandles()
 	{
 		if (IoHandles.input != INVALID_HANDLE_VALUE)
 			FlushFileBuffers(IoHandles.input);
