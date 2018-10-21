@@ -149,9 +149,9 @@ namespace TestLib.Worker
 
 		private void StartSlot(uint id)
 		{
-			slots[id - 1] = slots[id - 1] ?? new Slot(id, slotsCancellationTokenSource.Token);
+			slots[id - 1] = slots[id - 1] ?? new Slot(id);
 			workerTasks[id] =
-				Task.Run(() => slots[id - 1].Do(), slotsCancellationTokenSource.Token);
+				Task.Run(() => slots[id - 1].Do(slotsCancellationTokenSource.Token), slotsCancellationTokenSource.Token);
 		}
 
 		private void sendAliveStatus()

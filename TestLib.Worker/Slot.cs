@@ -10,16 +10,15 @@ namespace TestLib.Worker
 	{
 		static Logger logger = LogManager.GetCurrentClassLogger();
 
-		public Slot(uint slotNumber, CancellationToken token)
+		public Slot(uint slotNumber)
 		{
 			this.slotNumber = slotNumber;
-			this.token = token;
 			client = new HttpCodelabsApiClient();
 
 			logger.Info("Slot {0} created", slotNumber);
 		}
 
-		public void Do()
+		public void Do(CancellationToken token)
 		{
 			Application app = Application.Get();
 
@@ -81,7 +80,6 @@ namespace TestLib.Worker
 		}
 
 		uint slotNumber;
-		CancellationToken token;
 		HttpCodelabsApiClient client;
 	}
 }
