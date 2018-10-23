@@ -9,7 +9,6 @@ namespace TestLib.Worker
 	class ProblemFile
 	{
 		public string id;
-		public string Name;
 		public byte[] Content;
 	}
 
