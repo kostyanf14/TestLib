@@ -101,6 +101,7 @@ namespace TestLib.Worker
 		{
 			Stop();
 			workerTasks.End();
+			LoggerManaged.Destroy();
 			apiClient.SignOut(Configuration.WorkerId);
 		}
 

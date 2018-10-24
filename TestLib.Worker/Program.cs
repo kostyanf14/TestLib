@@ -41,7 +41,6 @@ namespace TestLib.Worker
 			}
 
 			app.End();
-			app.LoggerManaged.Destroy();
 		}
 	}
 }
