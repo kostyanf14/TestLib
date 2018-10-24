@@ -73,6 +73,8 @@ namespace TestLib.Worker.ClientApi
 		{
 			Uri uri = new Uri(Application.Get().Configuration.BaseApiAddress, url);
 
+			logger.Debug("Statring download file from {0}", uri);
+
 			ProblemFile solution = new ProblemFile();
 			solution.Content = client.GetAsync(uri).Result.Content.ReadAsByteArrayAsync().Result;
 			return solution;
@@ -84,6 +86,9 @@ namespace TestLib.Worker.ClientApi
 		{
 			string endpoint = buildEndpoint("problems", problemId);
 			string jsonProblem = client.GetStringAsync(endpoint).Result;
+
+			logger.Debug("Download problem response length: {0}", jsonProblem.Length);
+
 			JToken parsedProblem = JToken.Parse(jsonProblem);
 
 			Test[] tests = new Test[parsedProblem["tests"].Count()];
