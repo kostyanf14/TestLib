@@ -292,6 +292,7 @@ namespace TestLib.Worker
 
                     tester.SetWorkDirectory(workdir);
                     tester.SetRealTimeLimit(submission.RealTimeLimit);
+					tester.SetMemoryLimit(submission.MemoryLimit);
                     tester.RedirectIOHandleToFile(IOHandleType.Input, inputFileFullPath);
                     tester.RedirectIOHandleToFile(IOHandleType.Output, outputFileFullPath);
                     tester.RedirectIOHandleToHandle(IOHandleType.Error, tester.GetIORedirectedHandle(IOHandleType.Output));
