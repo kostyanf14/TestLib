@@ -1,72 +1,49 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace TestLib.Worker
 {
-    internal class ProblemCache
-    {
-        readonly uint MaxSize;
-        public ProblemCache(uint maxSize = 1)
-        {
-            MaxSize = maxSize;
-        }
+	internal class ProblemCache
+	{
+		private readonly uint MaxSize;
+		private LinkedList<ulong> cachedProblems = new LinkedList<ulong>();
+		private Dictionary<ulong, Problem> problems = new Dictionary<ulong, Problem>();
+		private Dictionary<ulong, LinkedListNode<ulong>> problemsNode = new Dictionary<ulong, LinkedListNode<ulong>>();
+		private readonly object sync = new object();
 
-        public void AddProblem(Problem problem)
-        {
-            LinkedListNode<ulong> node = cachedProblems.Find(problem.Id);
-            if (node != null)
-            {
-                cachedProblems.Remove(node);
-                cachedProblems.AddFirst(node);
+		public ProblemCache(uint maxSize = 1)
+		{
+			MaxSize = maxSize;
+		}
 
-				if (problems[problem.Id].LastUpdate != problem.LastUpdate)
+
+		public Problem FetchProblem(ulong id, DateTime updatedAt, Func<Problem> func)
+		{
+			var contains = problems.TryGetValue(id, out var problem);
+
+			if (contains && problem.LastUpdate == updatedAt)
+			{
+				return getProblem(id);
+			}
+			else
+			{
+				lock (sync)
 				{
-					Application.Get().FileProvider.RemoveProblem(problems[problem.Id]);
-					Application.Get().FileProvider.SaveProblem(problem);
-
-					problems[problem.Id] = problem;
+					problem = func();
+					addOrUpdateProblem(problem, contains);
+					return getProblem(problem.Id);
 				}
 			}
-            else
-            {
-                if (cachedProblems.Count == MaxSize)
-                {
-                    Application.Get().FileProvider.RemoveProblem(problems[cachedProblems.Last.Value]);
-                    problems.Remove(cachedProblems.Last.Value);
-                    problemsNode.Remove(cachedProblems.Last.Value);
-                    cachedProblems.RemoveLast();
-                }
-
-                cachedProblems.AddFirst(problem.Id);
-                problemsNode.Add(problem.Id, cachedProblems.First);
-                problems.Add(problem.Id, problem);
-                Application.Get().FileProvider.SaveProblem(problem);
-            }
-        }
-        public Problem GetProblem(ulong id)
-        {
-            if (problems.ContainsKey(id))
-            {
-                cachedProblems.Remove(problemsNode[id]);
-                cachedProblems.AddFirst(problemsNode[id]);
-
-                return problems[id];
-            }
-            return null;
-        }
-
-		public bool CheckProblem(ulong id, DateTime updatedAt = default(DateTime)) => 
-			problems.ContainsKey(id) && problems[id].LastUpdate == updatedAt;
+		}
 
 		public void Clear()
 		{
-			lock (problems)
+			lock (sync)
 			{
 				foreach (var problem in problems)
+				{
 					Application.Get().FileProvider.RemoveProblem(problem.Value);
+				}
 
 				cachedProblems.Clear();
 				problems.Clear();
@@ -74,8 +51,55 @@ namespace TestLib.Worker
 			}
 		}
 
-        LinkedList<ulong> cachedProblems = new LinkedList<ulong>();
-        Dictionary<ulong, Problem> problems = new Dictionary<ulong, Problem>();
-        Dictionary<ulong, LinkedListNode<ulong>> problemsNode = new Dictionary<ulong, LinkedListNode<ulong>>();
-    }
+		private void addOrUpdateProblem(Problem problem, bool update)
+		{
+			if (update) { updateProblem(problem); } else { addProblem(problem); }
+		}
+
+		private void addProblem(Problem problem)
+		{
+			if (cachedProblems.Count == MaxSize)
+			{
+				var lastProblem = cachedProblems.Last.Value;
+				cachedProblems.RemoveLast();
+
+				Application.Get().FileProvider.RemoveProblem(problems[lastProblem]);
+				problems.Remove(lastProblem);
+				problemsNode.Remove(lastProblem);
+			}
+
+			cachedProblems.AddFirst(problem.Id);
+			problemsNode.Add(problem.Id, cachedProblems.First);
+			problems.Add(problem.Id, problem);
+			Application.Get().FileProvider.SaveProblem(problem);
+		}
+
+		private void updateProblem(Problem newProblem)
+		{
+			LinkedListNode<ulong> node = problemsNode[newProblem.Id];
+			cachedProblems.Remove(node);
+			cachedProblems.AddFirst(node);
+
+			var currentProblem = problems[newProblem.Id];
+			if (currentProblem.LastUpdate != newProblem.LastUpdate)
+			{
+				Application.Get().FileProvider.RemoveProblem(currentProblem);
+				Application.Get().FileProvider.SaveProblem(newProblem);
+
+				problems[newProblem.Id] = newProblem;
+			}
+		}
+
+		private Problem getProblem(ulong id)
+		{
+			var problem = problems[id];
+			var node = problemsNode[id];
+
+			cachedProblems.Remove(node);
+			cachedProblems.AddFirst(node);
+
+
+			return problem;
+		}
+	}
 }
