@@ -6,9 +6,9 @@ using TestLib.Worker.ClientApi;
 
 namespace TestLib.Worker
 {
-	class Slot
+	internal class Slot
 	{
-		static Logger logger = LogManager.GetCurrentClassLogger();
+		private static Logger logger = LogManager.GetCurrentClassLogger();
 
 		public Slot(uint slotNumber)
 		{
@@ -33,7 +33,9 @@ namespace TestLib.Worker
 
 				var submission = submissions.First();
 				if (!client.SendRequest(client.GetTakeSubmissionsRequestMessage(submission.Id)))
+				{
 					continue;
+				}
 
 				logger.Info("Testing slot {0} taken submission with id {1}", slotNumber, submission.Id);
 				logger.Debug("Submission: {0}", submission);
@@ -41,45 +43,45 @@ namespace TestLib.Worker
 				ProblemFile solution = client.DownloadSolution(submission);
 				app.FileProvider.SaveFile(solution);
 
-				Problem problem = null;
-				if (!Application.Get().Problems.CheckProblem(submission.ProblemId, submission.ProblemUpdatedAt))
-				{
-					logger.Debug("Need download problem with id {0}", submission.ProblemId);
-					app.Problems.AddProblem(problem = client.DownloadProblem(submission.ProblemId));
-				}
-				else
-					problem = app.Problems.GetProblem(submission.ProblemId);
+				Problem problem = app.Problems.FetchProblem(
+					submission.ProblemId, submission.ProblemUpdatedAt,
+					() =>
+					{
+						logger.Debug("Need download problem with id {0}", submission.ProblemId);
+						return client.DownloadProblem(submission.ProblemId);
+					}
+				);
 
 				Worker worker = new Worker(slotNumber, client);
-                WorkerResult result;
+				WorkerResult result;
 
-                try
-                {
-                    result = worker.Testing(submission, problem, solution);
-                }
-                catch(Exception ex)
-                {
-                    logger.Error("Slot {0} worker testing failed with exception {1}. Error {2}", slotNumber, ex.GetType().Name, ex);
-                    result = WorkerResult.TestingError;
-                }
+				try
+				{
+					result = worker.Testing(submission, problem, solution);
+				}
+				catch (Exception ex)
+				{
+					logger.Error("Slot {0} worker testing failed with exception {1}. Error {2}", slotNumber, ex.GetType().Name, ex);
+					result = WorkerResult.TestingError;
+				}
 
-                switch (result)
-                {
-                    case WorkerResult.Ok:
-                    case WorkerResult.CompilerError:
-                        app.RequestMessages.Enqueue(client.GetReleaseSubmissionsRequestMessage(submission.Id, result));
-                        break;
-                    case WorkerResult.TestingError:
-                        app.RequestMessages.Enqueue(client.GetFailSubmissionsRequestMessage(submission.Id));
-                        break;
-                }
-                           
+				switch (result)
+				{
+					case WorkerResult.Ok:
+					case WorkerResult.CompilerError:
+						app.RequestMessages.Enqueue(client.GetReleaseSubmissionsRequestMessage(submission.Id, result));
+						break;
+					case WorkerResult.TestingError:
+						app.RequestMessages.Enqueue(client.GetFailSubmissionsRequestMessage(submission.Id));
+						break;
+				}
+
 			}
 
 			token.ThrowIfCancellationRequested();
 		}
 
-		uint slotNumber;
-		HttpCodelabsApiClient client;
+		private readonly uint slotNumber;
+		private HttpCodelabsApiClient client;
 	}
 }
