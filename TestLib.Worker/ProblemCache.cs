@@ -16,7 +16,6 @@ namespace TestLib.Worker
 			MaxSize = maxSize;
 		}
 
-
 		public Problem FetchProblem(ulong id, DateTime updatedAt, Func<Problem> func)
 		{
 			var contains = problems.TryGetValue(id, out var problem);
@@ -29,9 +28,18 @@ namespace TestLib.Worker
 			{
 				lock (sync)
 				{
-					problem = func();
-					addOrUpdateProblem(problem, contains);
-					return getProblem(problem.Id);
+					contains = problems.TryGetValue(id, out problem);
+
+					if (contains && problem.LastUpdate == updatedAt)
+					{
+						return getProblem(id);
+					}
+					else
+					{
+						problem = func();
+						addOrUpdateProblem(problem, contains);
+						return getProblem(problem.Id);
+					}
 				}
 			}
 		}
