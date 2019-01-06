@@ -76,7 +76,7 @@ namespace Internal
 
 			const int buffer_size = 8;
 			wchar_t env_var_num_of_proc[buffer_size];
-			
+
 			if (GetEnvironmentVariableW(L"NUMBER_OF_PROCESSORS",
 				env_var_num_of_proc, sizeof(wchar_t) * buffer_size) == 0
 				|| GetLastError() == ERROR_ENVVAR_NOT_FOUND)
@@ -219,8 +219,8 @@ namespace Internal
 			HANDLE h = CreateFileW(_fileName, rwMode, 0, &attr, openMode, FILE_ATTRIBUTE_NORMAL, nullptr);
 			if (h == INVALID_HANDLE_VALUE)
 			{
-				Internal::logger->Error(L"WinAPI error in " __FUNCTION__ " at line %d. CreateFileW failed error code %lu. File name = %s\n",
-					__LINE__, GetLastError(), _fileName);
+				Internal::logger->Error(L"WinAPI error in " __FUNCTION__ " at line %d. CreateFileW failed error %s. File name = %s\n",
+					__LINE__, GetErrorMessage().get(), _fileName);
 
 				return false;
 			}
@@ -274,7 +274,7 @@ namespace Internal
 				h = &IoHandles.error;
 				break;
 			default:
-				Internal::logger->Error(__FUNCTION__ L"IOHandleType incorrect _handleType = %hhu\n",
+				Internal::logger->Error(__FUNCTION__ L"IOHandleType incorrect _handleType = %hhu",
 					(uint8)_handleType);
 				return false;
 
@@ -285,8 +285,8 @@ namespace Internal
 				if (!DuplicateHandle(GetCurrentProcess(), _handle, GetCurrentProcess(), h,
 					0, TRUE, DUPLICATE_SAME_ACCESS))
 				{
-					Internal::logger->Error(L"WinAPI error in " __FUNCTION__ " at line %d. DuplicateHandle failed error code %lu\n",
-						__LINE__, GetLastError());
+					Internal::logger->Error(L"WinAPI error in " __FUNCTION__ " at line %d. DuplicateHandle failed error %s",
+						__LINE__, GetErrorMessage().get());
 
 					return false;
 				}
@@ -349,8 +349,8 @@ namespace Internal
 			if (!QueryInformationJobObject(startupHandles.job, JobObjectExtendedLimitInformation,
 				&jobExtendedLimits, sizeof(jobExtendedLimits), nullptr))
 			{
-				Internal::logger->Error(L"WinAPI error in " __FUNCTION__ " at line %d. QueryInformationJobObject failed error code %lu\n",
-					__LINE__, GetLastError());
+				Internal::logger->Error(L"WinAPI error in " __FUNCTION__ " at line %d. QueryInformationJobObject failed error %s",
+					__LINE__, GetErrorMessage().get());
 
 				return false;
 			}
@@ -361,8 +361,8 @@ namespace Internal
 			if (!SetInformationJobObject(startupHandles.job, JobObjectExtendedLimitInformation,
 				&jobExtendedLimits, sizeof(JOBOBJECT_EXTENDED_LIMIT_INFORMATION)))
 			{
-				Internal::logger->Error(L"WinAPI error in " __FUNCTION__ " at line %d. SetInformationJobObject failed error code %lu. Memory limit = %lu\n",
-					__LINE__, GetLastError(), limits.memoryLimitKb);
+				Internal::logger->Error(L"WinAPI error in " __FUNCTION__ " at line %d. SetInformationJobObject failed error %s. Memory limit = %lu\n",
+					__LINE__, GetErrorMessage().get(), limits.memoryLimitKb);
 
 				return false;
 			}
@@ -373,8 +373,8 @@ namespace Internal
 		{
 			if (!SetTokenIntegrityLevel(hProcessCreationToken, SECURITY_MANDATORY_LOW_RID))// SECURITY_MANDATORY_UNTRUSTED_RID))
 			{
-				Internal::logger->Error(L"WinAPI error in " __FUNCTION__ " at line %d. Can't set container process creation token security info. SetTokenIntegrityLevel failed error code %lu\n",
-					__LINE__, GetLastError());
+				Internal::logger->Error(L"WinAPI error in " __FUNCTION__ " at line %d. Can't set container process creation token security info. SetTokenIntegrityLevel failed error %s",
+					__LINE__, GetErrorMessage().get());
 
 				SafeCloseHandle(&hProcessCreationToken);
 
@@ -392,8 +392,8 @@ namespace Internal
 
 			if (!InitializeProcThreadAttributeList(_startupInfoEx->lpAttributeList, 2, 0, &attributeListSize))
 			{
-				Internal::logger->Error(L"WinAPI error in " __FUNCTION__ " at line %d. InitializeProcThreadAttributeList failed error code %lu\n",
-					__LINE__, GetLastError());
+				Internal::logger->Error(L"WinAPI error in " __FUNCTION__ " at line %d. InitializeProcThreadAttributeList failed error %s",
+					__LINE__, GetErrorMessage().get());
 
 				return false;
 			}
@@ -417,8 +417,8 @@ namespace Internal
 			if (!UpdateProcThreadAttribute(_startupInfoEx->lpAttributeList, 0, PROC_THREAD_ATTRIBUTE_MITIGATION_POLICY,
 				&mitigationPolicy, sizeof(mitigationPolicy), nullptr, nullptr))
 			{
-				Internal::logger->Error(L"WinAPI error in " __FUNCTION__ " at line %d. UpdateProcThreadAttribute for PROC_THREAD_ATTRIBUTE_MITIGATION_POLICY failed error code %lu\n",
-					__LINE__, GetLastError());
+				Internal::logger->Error(L"WinAPI error in " __FUNCTION__ " at line %d. UpdateProcThreadAttribute for PROC_THREAD_ATTRIBUTE_MITIGATION_POLICY failed error %s",
+					__LINE__, GetErrorMessage().get());
 
 				DeleteProcThreadAttributeList(_startupInfoEx->lpAttributeList);
 				free(_startupInfoEx->lpAttributeList);
@@ -431,8 +431,8 @@ namespace Internal
 			if (!UpdateProcThreadAttribute(_startupInfoEx->lpAttributeList, 0, PROC_THREAD_ATTRIBUTE_CHILD_PROCESS_POLICY,
 				&childProcessPolicy, sizeof(childProcessPolicy), nullptr, nullptr))
 			{
-				Internal::logger->Error(L"WinAPI error in " __FUNCTION__ " at line %d. UpdateProcThreadAttribute for PROC_THREAD_ATTRIBUTE_CHILD_PROCESS_POLICY failed error code %lu\n",
-					__LINE__, GetLastError());
+				Internal::logger->Error(L"WinAPI error in " __FUNCTION__ " at line %d. UpdateProcThreadAttribute for PROC_THREAD_ATTRIBUTE_CHILD_PROCESS_POLICY failed error %s",
+					__LINE__, GetErrorMessage().get());
 
 				DeleteProcThreadAttributeList(_startupInfoEx->lpAttributeList);
 				free(_startupInfoEx->lpAttributeList);
@@ -462,8 +462,8 @@ namespace Internal
 			if (!SetInformationJobObject(startupHandles.job, JobObjectBasicUIRestrictions,
 				&jobUILimits, sizeof(JOBOBJECT_BASIC_UI_RESTRICTIONS)))
 			{
-				Internal::logger->Error(L"WinAPI error in " __FUNCTION__ " at line %d. Can't set UI restrinctions. SetInformationJobObject failed error code %lu\n",
-					__LINE__, GetLastError());
+				Internal::logger->Error(L"WinAPI error in " __FUNCTION__ " at line %d. Can't set UI restrinctions. SetInformationJobObject failed error %s",
+					__LINE__, GetErrorMessage().get());
 
 				return false;
 			}
@@ -475,9 +475,8 @@ namespace Internal
 #if _WIN32_WINNT > _WIN32_WINNT_VISTA
 			if (!SetProcessAffinityUpdateMode(startupHandles.process, 0))
 			{
-				Internal::logger->Error(L"WinAPI error in " __FUNCTION__ " at line %d. Can't disables dynamic update of the process affinity by the system.\
-SetProcessAffinityUpdateMode failed error code %lu\n",
-__LINE__, GetLastError());
+				Internal::logger->Error(L"WinAPI error in " __FUNCTION__ " at line %d. Can't disables dynamic update of the process affinity by the system. SetProcessAffinityUpdateMode failed error %s",
+					__LINE__, GetErrorMessage().get());
 
 				return false;
 			}
@@ -485,8 +484,8 @@ __LINE__, GetLastError());
 			ULONG proc = InterlockedIncrement(&current_processor);
 			if (!SetProcessAffinityMask(startupHandles.process, 1ull << (proc % processor_count)))
 			{
-				Internal::logger->Error(L"WinAPI error in " __FUNCTION__ " at line %d. Can't update the process affinity. SetProcessAffinityMask failed error code %lu\n",
-					__LINE__, GetLastError());
+				Internal::logger->Error(L"WinAPI error in " __FUNCTION__ " at line %d. Can't update the process affinity. SetProcessAffinityMask failed error %s",
+					__LINE__, GetErrorMessage().get());
 
 				return false;
 			}

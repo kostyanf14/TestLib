@@ -5,7 +5,7 @@ namespace Internal
 {
 	ULONG Tester::current_processor = 0;
 	ULONG Tester::processor_count = 1;
-	
+
 	bool Tester::Run(bool useRestrictions)
 	{
 		Internal::logger->Debug(L"Called " __FUNCTIONW__);
@@ -28,7 +28,7 @@ namespace Internal
 		HANDLE hProcessCreationToken = DuplicateCurrentProcessToken();
 		startupHandles.job = CreateJobObjectW(nullptr, nullptr);
 
-		STARTUPINFOEXW startupInfoEx = {0};
+		STARTUPINFOEXW startupInfoEx = { 0 };
 		startupInfoEx.StartupInfo.cb = sizeof(startupInfoEx);
 
 		if (IoHandles.input != INVALID_HANDLE_VALUE)
@@ -55,14 +55,14 @@ namespace Internal
 			//applyStartupAttribute(&startupInfoEx);
 		}
 
-		PROCESS_INFORMATION processInfo = {0};
+		PROCESS_INFORMATION processInfo = { 0 };
 		BOOL result = CreateProcessAsUserW(hProcessCreationToken, program, args,
 			nullptr, nullptr, TRUE, CREATE_SUSPENDED | EXTENDED_STARTUPINFO_PRESENT | CREATE_NO_WINDOW | CREATE_BREAKAWAY_FROM_JOB,
 			nullptr, workDirectory, (STARTUPINFOW*)&startupInfoEx, &processInfo);
 
 		if (!result)
 		{
-			Internal::logger->Error(L"Can't create process in " __FUNCTIONW__ " at line %d. CreateProcessAsUserW failed, error code %d", __LINE__, GetLastError());
+			Internal::logger->Error(L"Can't create process in " __FUNCTIONW__ " at line %d. CreateProcessAsUserW failed, error %s", __LINE__, GetErrorMessage().get());
 
 			return false;
 		}
@@ -74,7 +74,7 @@ namespace Internal
 
 		if (!AssignProcessToJobObject(startupHandles.job, processInfo.hProcess))
 		{
-			Internal::logger->Error(L"Can't assign process to job in " __FUNCTIONW__ " at line %d. AssignProcessToJobObject failed, error code %d", __LINE__, GetLastError());
+			Internal::logger->Error(L"Can't assign process to job in " __FUNCTIONW__ " at line %d. AssignProcessToJobObject failed, error %s", __LINE__, GetErrorMessage().get());
 
 			TerminateProcess(processInfo.hProcess, -1);
 			SafeCloseHandle(&processInfo.hThread);
@@ -93,7 +93,7 @@ namespace Internal
 		BOOL res = FALSE;
 		if (!IsProcessInJob(processInfo.hProcess, startupHandles.job, &res) || !res)
 		{
-			Internal::logger->Error(L"Process didnot assign to job in " __FUNCTIONW__ " at line %d. IsProcessInJob failed, error code %d", __LINE__, GetLastError());
+			Internal::logger->Error(L"Process didnot assign to job in " __FUNCTIONW__ " at line %d. IsProcessInJob failed, error %s", __LINE__, GetErrorMessage().get());
 
 			TerminateProcess(processInfo.hProcess, -1);
 			SafeCloseHandle(&processInfo.hThread);
@@ -111,7 +111,7 @@ namespace Internal
 		startTime = GetTickCount();
 		if (ResumeThread(processInfo.hThread) == (DWORD)-1)
 		{
-			Internal::logger->Error(L"Can't resume main thread in " __FUNCTIONW__ " at line %d. ResumeThread failed, error code %d", __LINE__, GetLastError());
+			Internal::logger->Error(L"Can't resume main thread in " __FUNCTIONW__ " at line %d. ResumeThread failed, error %s", __LINE__, GetErrorMessage().get());
 
 			TerminateProcess(processInfo.hProcess, -1);
 			SafeCloseHandle(&processInfo.hThread);
@@ -201,7 +201,7 @@ namespace Internal
 				usedResources.cpuWorkTimeMs = static_cast<uint32>
 					((basicAccountingInfo.TotalKernelTime.QuadPart + basicAccountingInfo.TotalUserTime.QuadPart) / 10000);
 			}*/
-			
+
 			//TODO: check need if
 			LARGE_INTEGER frequency;
 			QueryPerformanceFrequency(&frequency);
@@ -209,8 +209,8 @@ namespace Internal
 			ULONG64 processTime;
 			if (!QueryProcessCycleTime(startupHandles.process, &processTime))
 			{
-				Internal::logger->Error(L"Error get process cycle time in " __FUNCTIONW__ " at line %d. QueryProcessCycleTime failed, error code %d. workDirectory = '%s', program = '%s'",
-					__LINE__,  GetLastError(), workDirectory, program);
+				Internal::logger->Error(L"Error get process cycle time in " __FUNCTIONW__ " at line %d. QueryProcessCycleTime failed, error %s. workDirectory = '%s', program = '%s'",
+					__LINE__, GetErrorMessage().get(), workDirectory, program);
 			}
 			else
 			{
