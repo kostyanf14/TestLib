@@ -11,11 +11,11 @@ namespace TestLib.Worker
 		{
 			logger.Info("TestLib.Worker started");
 			Application app = Application.Get();
-			/*if (!app.Init())
+			if (!app.Init())
 				return;
 
 			app.Start();
-			*/
+			
 			string cmd = null;
 			for (; cmd != "exit";)
 			{
