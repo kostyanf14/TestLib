@@ -11,11 +11,11 @@ namespace TestLib.Worker
 		{
 			logger.Info("TestLib.Worker started");
 			Application app = Application.Get();
-			if (!app.Init())
+			/*if (!app.Init())
 				return;
 
 			app.Start();
-
+			*/
 			string cmd = null;
 			for (; cmd != "exit";)
 			{
@@ -31,13 +31,17 @@ namespace TestLib.Worker
 				{ app.Stop(); app.Status(); }
 
 				if (cmd == "version")
-					Console.WriteLine("Version: {0}", app.Version());
+					Console.WriteLine("Version: {0}", app.GetVersion());
 
 				if (cmd == "clear problem")
 				{
 					app.Problems.Clear();
 					Console.WriteLine("Problem cache was cleared");
 				}
+
+				if (cmd == "update")
+					if (app.Update() == CheckUpdateStatus.Restart)
+						cmd = "exit";
 			}
 
 			app.End();

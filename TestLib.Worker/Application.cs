@@ -1,15 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using NLog;
+using System;
 using System.Collections.Specialized;
 using System.Configuration;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reflection;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using NLog;
 using TestLib.Worker.ClientApi;
 using TestLib.Worker.ClientApi.Models;
 
@@ -22,6 +19,14 @@ namespace TestLib.Worker
 
 		public static uint ToUInt32OrDefault(this string value, uint defaultValue = 0) =>
 			 uint.TryParse(value, out uint result) ? result : defaultValue;
+	}
+
+	internal enum CheckUpdateStatus
+	{
+		None,
+		Ok,
+		Restart,
+		Failed,
 	}
 
 	internal sealed class Application
@@ -56,14 +61,18 @@ namespace TestLib.Worker
 			FileProvider.Init();
 
 			if (!Compilers.Init())
+			{
 				return false;
+			}
 
 			if (Configuration.WorkerId == Guid.Empty)
+			{
 				if (!signUp())
 				{
 					logger.Error("Application sign up failed");
 					return false;
 				}
+			}
 
 			if (!apiClient.SignIn(Configuration.WorkerId))
 			{
@@ -103,6 +112,59 @@ namespace TestLib.Worker
 			workerTasks.End();
 			LoggerManaged.Destroy();
 			apiClient.SignOut(Configuration.WorkerId);
+		}
+
+		public CheckUpdateStatus Update()
+		{
+			using (WebClient client = new WebClient())
+			{
+				try
+				{
+					string stringVersion = client.DownloadString(Configuration.Update.LatestVersionUrl).Replace("\"", "");
+					if (!Version.TryParse(stringVersion, out var version))
+					{
+						logger.Warn("Can't parse latest version {0} from update server {1}. Update not available.",
+							stringVersion, Configuration.Update.LatestVersionUrl);
+
+						return CheckUpdateStatus.Failed;
+					}
+
+					Version current = GetVersion();
+					if (version > current)
+					{
+						var msg = string.Format("Latest version {0}, current version {1}: update is necessary.", version, current);
+
+						logger.Info(msg);
+						Console.WriteLine(msg);
+
+						var args = new string[]
+						{
+							"TestLib.Worker.Updater.exe",
+							Process.GetCurrentProcess().Id.ToString(),
+							Directory.GetCurrentDirectory(),
+							AppDomain.CurrentDomain.FriendlyName,
+						};
+						Process.Start("TestLib.Worker.Updater.exe", string.Join(" ", args));
+
+						return CheckUpdateStatus.Restart;
+					}
+					else
+					{
+						var msg = string.Format("Latest version {0}, current version {1}: update is not necessary.", version, current);
+
+						logger.Info(msg);
+						Console.WriteLine(msg);
+
+						return CheckUpdateStatus.Ok;
+					}
+				}
+				catch (Exception ex)
+				{
+					logger.Error(ex, "Error while update.");
+
+					return CheckUpdateStatus.Failed;
+				}
+			}
 		}
 
 		private bool signUp()

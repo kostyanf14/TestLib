@@ -12,10 +12,19 @@ namespace TestLib.Worker
 {
 	internal class Configuration
 	{
+		public class UpdateConfiguration
+		{
+			public string LatestVersionUrl;
+			public string LatestProgramUrl;
+		}
+			
+
 		private Guid _workerId;
 
 		public Configuration(NameValueCollection config)
 		{
+			Update = new UpdateConfiguration();
+
 			WorkerName = config.Get("worker_name") ?? "TestLib.Worker";
 
 			TestingWorkDirectory = config.Get("workarea") ?? ".\\workarea\\";
@@ -37,6 +46,9 @@ namespace TestLib.Worker
 
 			GetSubmissionDelayMs = config.Get("get_submission_delay").ToInt32OrDefault(500);
 			WorkerSlotCount = config.Get("worker_slot_count").ToUInt32OrDefault(1);
+
+			Update.LatestVersionUrl = config.Get("update_latest_version_url") ?? "http://localhost:8081/api/version";
+			Update.LatestProgramUrl = config.Get("update_latest_program_url") ?? "http://localhost:8081/api/update?version=latest";
 
 			fid = Path.Combine(
 				Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
@@ -71,6 +83,7 @@ namespace TestLib.Worker
 		public string CompilerLogFileName { get; }
 		public int GetSubmissionDelayMs { get; }
 		public uint WorkerSlotCount { get; }
+		public UpdateConfiguration Update { get; }
 		public Guid WorkerId
 		{
 			get => _workerId;
