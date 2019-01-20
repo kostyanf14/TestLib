@@ -32,7 +32,7 @@ namespace TestLib.Worker
 		private Application()
 		{
 			logger = LogManager.GetCurrentClassLogger();
-			logger.Info("Application initialization started. Version: {0}", Version());
+			logger.Info("Application initialization started. Version: {0}", GetVersion());
 
 			LoggerManaged = new LoggerManaged();
 			apiClient = new HttpCodelabsApiClient();
@@ -74,7 +74,7 @@ namespace TestLib.Worker
 			return true;
 		}
 
-		public Version Version()
+		public Version GetVersion()
 		{
 			var assembly = Assembly.GetExecutingAssembly();
 			var fvi = FileVersionInfo.GetVersionInfo(assembly.Location);
