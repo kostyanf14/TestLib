@@ -9,13 +9,13 @@ using TestLib.UpdateServer.App_Start;
 
 namespace TestLib.UpdateServer
 {
-    public class WebApiApplication : HttpApplication
+	public class WebApiApplication : HttpApplication
 	{
-        protected void Application_Start()
-        {
-            GlobalConfiguration.Configure(WebApiConfig.Register);
+		protected void Application_Start()
+		{
+			GlobalConfiguration.Configure(WebApiConfig.Register);
 
 			Helpers.StartApplication(Server);
 		}
-    }
+	}
 }
