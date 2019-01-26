@@ -51,7 +51,7 @@ namespace TestLib.Worker
 			Problems = new ProblemCache(Configuration.ProblemsCacheSize);
 			RequestMessages = new BlockingQueue<RequestMessage>(Configuration.ResultSendingCacheSize);
 
-			workerTasks = new WorkerTaskManager(Configuration);
+			workerTasks = new WorkerTaskManager();
 		}
 
 		public bool Init()
@@ -74,9 +74,26 @@ namespace TestLib.Worker
 				}
 			}
 
-			if (!apiClient.SignIn(Configuration.WorkerId))
+			var status = apiClient.SignIn(Configuration.WorkerId);
+			if (status == UpdateWorkerStatus.LoginIncorrect)
+			{
+				logger.Error("Application sign in failed. Worker id is incorrect. Trying re-sign up");
+
+				if (!signUp())
+				{
+					logger.Error("Application sign up failed");
+					return false;
+				}
+			}
+			else if (status != UpdateWorkerStatus.Ok)
 			{
 				logger.Error("Application sign in failed");
+				return false;
+			}
+
+			if (!workerTasks.Init(Configuration))
+			{
+				apiClient.SignOut(Configuration.WorkerId);
 				return false;
 			}
 

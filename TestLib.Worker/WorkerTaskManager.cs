@@ -19,18 +19,33 @@ namespace TestLib.Worker
 		private CancellationTokenSource aliveStatusSenderCancellationTokenSource;
 		private bool started;
 
-		public WorkerTaskManager(Configuration configuration)
+		public WorkerTaskManager()
 		{
 			logger = LogManager.GetCurrentClassLogger();
 
+			started = false;
+		}
+
+		public bool Init(Configuration configuration)
+		{
 			slots = new Slot[configuration.WorkerSlotCount];
 			workerTasks = new Task[configuration.WorkerSlotCount + 1];
 
 			aliveStatusSenderCancellationTokenSource = new CancellationTokenSource();
-			aliveStatusSenderTask = Task.Run(
-				() => sendAliveStatus(), aliveStatusSenderCancellationTokenSource.Token);
 
-			started = false;
+			try
+			{
+				aliveStatusSenderTask = Task.Run(
+					() => sendAliveStatus(), aliveStatusSenderCancellationTokenSource.Token);
+
+				return true;
+			}
+			catch (Exception ex)
+			{
+				logger.Error(ex, "Can't initalize WorkerTaskManager. Start is not avaliable");
+
+				return false;
+			}
 		}
 
 		public void PrintStatus()
@@ -192,11 +207,11 @@ namespace TestLib.Worker
 					else
 						status = WorkerStatus.Ok;
 
-					client.Alive(app.Configuration.WorkerId, new AliveInformation(status, GetStatus()));
+					client.UpdateWorker(app.Configuration.WorkerId, new WorkerInformation(status, GetStatus()));
 				}
 				catch (Exception ex)
 				{
-					logger.Error("Sending alive information failed with error {0}. Exeption: {1}",
+					logger.Error("Updating worker information failed with error {0}. Exeption: {1}",
 						ex.GetType().Name, ex.Message);
 				}
 				finally

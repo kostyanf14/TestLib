@@ -28,16 +28,38 @@ namespace TestLib.Worker.ClientApi.Models
 		[JsonProperty(PropertyName = "ips")]
 		public string[] IPs;
 		[JsonProperty(PropertyName = "api_version")]
-		public uint ApiVersion;
+		public uint? ApiVersion;
 		[JsonProperty(PropertyName = "api_type")]
-		public ApiType ApiType;
+		public ApiType? ApiType;
 		[JsonProperty(PropertyName = "webhook_supported")]
-		public bool WebhookSupported;
+		public bool? WebhookSupported;
+
+		[JsonProperty(PropertyName = "status")]
+		public WorkerStatus? Status;
+		[JsonProperty(PropertyName = "task_status")]
+		public string[] TaskStatuses;
+
+		[JsonProperty(PropertyName = "alive_at")]
+		public DateTime AliveAt = DateTime.Now;
+
+		public WorkerInformation(WorkerStatus status)
+		{
+			Status = status;
+			TaskStatuses = new string[] { };
+		}
 
 		public WorkerInformation(string name, string[] ps)
 		{
 			Name = name ?? throw new ArgumentNullException(nameof(name));
 			IPs = ps ?? throw new ArgumentNullException(nameof(ps));
+
+			Status = WorkerStatus.Disabled;
+		}
+
+		public WorkerInformation(WorkerStatus status, string[] taskStatuses)
+		{
+			Status = status;
+			TaskStatuses = taskStatuses ?? throw new ArgumentNullException(nameof(taskStatuses));
 		}
 
 		public WorkerInformation(string name, string[] ips, uint apiVersion, ApiType apiType, bool webhookSupported)
@@ -47,6 +69,8 @@ namespace TestLib.Worker.ClientApi.Models
 			ApiVersion = apiVersion;
 			ApiType = apiType;
 			WebhookSupported = webhookSupported;
+
+			Status = WorkerStatus.Disabled;
 		}
 	}
 }

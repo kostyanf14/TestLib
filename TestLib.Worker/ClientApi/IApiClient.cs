@@ -7,9 +7,9 @@ namespace TestLib.Worker.ClientApi
 	interface IApiClient
 	{
 		Guid SignUp(WorkerInformation worker);
-		bool SignIn(Guid id);
+		UpdateWorkerStatus SignIn(Guid id);
 		bool SignOut(Guid id);
-		bool Alive(Guid id, AliveInformation alive);
+		UpdateWorkerStatus UpdateWorker(Guid id, WorkerInformation worker);
 
 		Problem DownloadProblem(ulong problemId);
 		ProblemFile DownloadSolution(Submission submission);

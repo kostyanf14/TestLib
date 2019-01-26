@@ -183,7 +183,7 @@ namespace TestLib.Worker.ClientApi
 			worker.WebhookSupported = GetWebhookSupported();
 
 			var responseMessage = client.PostAsync(
-				endpoint, new { worker }.AsJson()).Result;
+				endpoint, new { worker }.AsJson(skipNull: true)).Result;
 
 			logger.Debug("Sign up request was send {0}",
 			   responseMessage.StatusCode == HttpStatusCode.Created ?
@@ -203,64 +203,43 @@ namespace TestLib.Worker.ClientApi
 					responseMessage.Content.ReadAsStringAsync().Result
 				)["id"].Value<string>());
 		}
-		public bool SignIn(Guid id)
-		{
-			string endpoint = buildEndpoint("workers", id.ToString(), "session");
-			var responseMessage = client.PostAsync(endpoint, null).Result;
+		public UpdateWorkerStatus SignIn(Guid id) => UpdateWorker(id, new WorkerInformation(WorkerStatus.Ok));
+		public bool SignOut(Guid id) =>
+			UpdateWorker(id, new WorkerInformation(WorkerStatus.Disabled)) == UpdateWorkerStatus.Ok;
 
-			logger.Debug("Sign in request was send {0}",
+		public UpdateWorkerStatus UpdateWorker(Guid id, WorkerInformation worker)
+		{
+				string endpoint = buildEndpoint("workers", id.ToString());
+
+			var responseMessage = client.PutAsync(
+				endpoint, new { worker }.AsJson(skipNull: true)).Result;
+
+			logger.Debug("Worker update request was send {0}",
 			   responseMessage.StatusCode == HttpStatusCode.NoContent ?
 			   "successfully" : "failed");
 
 			if (responseMessage.StatusCode != HttpStatusCode.NoContent)
 			{
-				logger.Error("Sign in failed with error message: {0}. Status code: {1}",
-					responseMessage.Content?.ReadAsStringAsync()?.Result,
-					responseMessage.StatusCode);
+				if (responseMessage.StatusCode == HttpStatusCode.NotFound)
+				{
+					logger.Error("Worker update failed. Status code: NotFound. Worker id {0} is incorrect. Error message: {1}",
+						id, responseMessage.Content?.ReadAsStringAsync()?.Result);
+
+					return UpdateWorkerStatus.LoginIncorrect;
+				}
+				else
+				{
+					logger.Error("Worker update failed. Status code: {0}. Error message: {1}",
+						responseMessage.StatusCode, responseMessage.Content?.ReadAsStringAsync()?.Result);
+
+					return UpdateWorkerStatus.Failed;
+				}
 			}
-
-			return responseMessage.StatusCode == HttpStatusCode.NoContent;
-		}
-		public bool SignOut(Guid id)
-		{
-			string endpoint = buildEndpoint("workers", id.ToString(), "session");
-			var responseMessage = client.DeleteAsync(endpoint).Result;
-
-			logger.Debug("Sign out request was send {0}",
-			   responseMessage.StatusCode == HttpStatusCode.NoContent ?
-			   "successfully" : "failed");
-
-			if (responseMessage.StatusCode != HttpStatusCode.NoContent)
-			{
-				logger.Error("Sign out failed with error message: {0}. Status code: {1}",
-					responseMessage.Content?.ReadAsStringAsync()?.Result,
-					responseMessage.StatusCode);
-			}
-
-			return responseMessage.StatusCode == HttpStatusCode.NoContent;
-		}
-		public bool Alive(Guid id, AliveInformation alive)
-		{
-			string endpoint = buildEndpoint("workers", id.ToString(), "alive");
-
-			var responseMessage = client.PostAsync(
-				endpoint, new { alive }.AsJson()).Result;
-
-			logger.Debug("Alive request was send {0}",
-			   responseMessage.StatusCode == HttpStatusCode.NoContent ?
-			   "successfully" : "failed");
-
-			if (responseMessage.StatusCode != HttpStatusCode.NoContent)
-			{
-				logger.Error("Alive failed. Status code: {0}. Error message: {1}",
-					responseMessage.StatusCode,
-					responseMessage.Content?.ReadAsStringAsync()?.Result);
-			}
-
-			return responseMessage.StatusCode == HttpStatusCode.NoContent;
+			else
+				return UpdateWorkerStatus.Ok;
 		}
 
-		public uint GetVersion() => 1;
+		public uint GetVersion() => 2;
 		public ApiType GetApiType() => ApiType.HTTP;
 		public bool GetWebhookSupported() => false;
 
@@ -271,15 +250,21 @@ namespace TestLib.Worker.ClientApi
 			string endpoint = $"{Application.Get().Configuration.BaseApiAddress}/{method}";
 
 			if (!(id is null))
+			{
 				endpoint += $"/{id}";
+			}
 
 			if (!(action is null))
+			{
 				endpoint += $"/{action}";
+			}
 
 			endpoint += $"?access_token={Application.Get().Configuration.ApiAuthToken}";
 
 			if (!(parameters is null))
+			{
 				endpoint += $"&{parameters}";
+			}
 
 			return endpoint;
 		}
