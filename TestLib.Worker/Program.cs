@@ -9,8 +9,6 @@ namespace TestLib.Worker
 
 		private static void Main(string[] args)
 		{
-			var x = System.Net.HttpStatusCode.NotFound.ToString();
-
 			logger.Info("TestLib.Worker started");
 			Application app = Application.Get();
 			if (!app.Init())
