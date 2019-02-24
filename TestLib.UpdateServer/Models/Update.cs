@@ -28,13 +28,12 @@ namespace TestLib.UpdateServer.Models
 		{
 			string[] fullUpdate =
 			{
-				"TestLib.Worker.exe",
-				"TestLib.Worker.exe.config",
+				"TestLib.WorkerService.exe",
+				"TestLib.WorkerService.exe.config",
 				"TestLib.Tester.dll",
 				"NLog.dll",
 				"NLog.config",
 				"Newtonsoft.Json.dll",
-				"LiteDB.dll",
 			};
 
 			if (files.Length != fullUpdate.Length)
