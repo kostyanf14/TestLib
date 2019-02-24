@@ -28,10 +28,24 @@
 		/// </summary>
 		private void InitializeComponent()
 		{
-			components = new System.ComponentModel.Container();
+			this.TestLibServiceInstaller = new System.ServiceProcess.ServiceInstaller();
+			// 
+			// TestLibServiceInstaller
+			// 
+			this.TestLibServiceInstaller.DelayedAutoStart = true;
+			this.TestLibServiceInstaller.Description = "TestLib Codelabs worker service";
+			this.TestLibServiceInstaller.DisplayName = "TestLib.Worker";
+			this.TestLibServiceInstaller.ServiceName = "TestLib.WorkerService";
+			this.TestLibServiceInstaller.StartType = System.ServiceProcess.ServiceStartMode.Automatic;
+			// 
+			// WorkerService
+			// 
 			this.ServiceName = "TestLib.WorkerService";
+
 		}
 
 		#endregion
+
+		private System.ServiceProcess.ServiceInstaller TestLibServiceInstaller;
 	}
 }
