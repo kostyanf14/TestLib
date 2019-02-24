@@ -64,6 +64,7 @@
     <Reference Include="System.Configuration.Install" />
     <Reference Include="System.Core" />
     <Reference Include="System.IO.Compression" />
+    <Reference Include="System.Management" />
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.ServiceModel" />
     <Reference Include="System.Transactions" />
@@ -96,6 +97,12 @@
     <Compile Include="ObjectExtensions.cs" />
     <Compile Include="Problem.cs" />
     <Compile Include="ProblemCache.cs" />
+    <Compile Include="ServiceProcessInstaller.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ServiceProcessInstaller.Designer.cs">
+      <DependentUpon>ServiceProcessInstaller.cs</DependentUpon>
+    </Compile>
     <Compile Include="Slot.cs" />
     <Compile Include="Test.cs" />
     <Compile Include="Worker.cs" />
@@ -125,6 +132,11 @@
       <Project>{75a0152a-d5bd-4ef3-97e5-43ac125d866d}</Project>
       <Name>TestLib.Tester</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="ServiceProcessInstaller.resx">
+      <DependentUpon>ServiceProcessInstaller.cs</DependentUpon>
+    </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
