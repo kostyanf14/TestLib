@@ -40,10 +40,12 @@
 			// TestLibServiceInstaller
 			// 
 			this.TestLibServiceInstaller.DelayedAutoStart = true;
+			this.TestLibServiceInstaller.Description = "TestLib Worker Service";
+			this.TestLibServiceInstaller.DisplayName = "TestLib.Worker";
 			this.TestLibServiceInstaller.ServiceName = "TestLib.WorkerService";
 			this.TestLibServiceInstaller.StartType = System.ServiceProcess.ServiceStartMode.Automatic;
 			// 
-			// ProjectInstaller
+			// ServiceProcessInstaller
 			// 
 			this.Installers.AddRange(new System.Configuration.Install.Installer[] {
             this.TestLibServiceProcessInstaller,
