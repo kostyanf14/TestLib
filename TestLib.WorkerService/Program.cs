@@ -36,6 +36,11 @@ namespace TestLib.WorkerService
 
 							ManagedInstallerClass.InstallHelper(new string[] { "/u", Assembly.GetExecutingAssembly().Location });
 							break;
+						case "update":
+							logger.Info("Starting checking update");
+
+							Application.Get().Update();
+							break;
 						default:
 							logger.Info("Unknown command.");
 							break;
