@@ -37,7 +37,7 @@ namespace TestLib.Worker
 		private Application()
 		{
 			logger = LogManager.GetCurrentClassLogger();
-			logger.Info("Application initialization started. Version: {0}", GetVersion());
+			logger.Info("Initiated the creation of application. Version: {0}", GetVersion());
 
 			LoggerManaged = new LoggerManaged();
 			apiClient = new HttpCodelabsApiClient();
@@ -58,10 +58,17 @@ namespace TestLib.Worker
 		{
 			LoggerManaged.InitNativeLogger(new LoggerManaged.LogEventHandler(LogManager.GetLogger("Native").Log));
 
+			logger.Debug("Current directory is {0}", Directory.GetCurrentDirectory());
+			logger.Debug("AppData folder is {0}", Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData));
+			logger.Debug("Current user is {0}", System.Security.Principal.WindowsIdentity.GetCurrent().Name);
+
+
 			FileProvider.Init();
 
 			if (!Compilers.Init())
 			{
+				logger.Error("Compilers initialization failed");
+
 				return false;
 			}
 
