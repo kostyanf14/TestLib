@@ -7,8 +7,8 @@ using NLog;
 
 namespace TestLib.Worker
 {
-    internal class CompilerManager
-    {
+	internal class CompilerManager
+	{
 		static Logger logger = LogManager.GetCurrentClassLogger();
 
 		private HashSet<byte> compilersIds = null;
@@ -16,7 +16,7 @@ namespace TestLib.Worker
 		private string directory;
 
 		public CompilerManager(string _dir)
-        {
+		{
 			logger.Debug("ctor");
 
 			directory = _dir;
@@ -40,25 +40,35 @@ namespace TestLib.Worker
 					logger.Warn("Incorect compiler configuration file extension. File {0} was skipped", info.Name);
 					continue;
 				}
+				else
+					logger.Debug("Try to load configuration from file {0}", info.Name);
 
-				Compiler compiler;
-				XmlSerializer serializer = new XmlSerializer(typeof(Compiler));
-				using (FileStream fs = info.OpenRead())
-				using (XmlReader reader = XmlReader.Create(fs))
-					compiler = (Compiler)serializer.Deserialize(reader);
+				try
+				{
+					Compiler compiler;
+					XmlSerializer serializer = new XmlSerializer(typeof(Compiler));
+					using (FileStream fs = info.OpenRead())
+					using (XmlReader reader = XmlReader.Create(fs))
+						compiler = (Compiler)serializer.Deserialize(reader);
 
-				compiler.Commands.Sort((x, y) => x.Order - y.Order);
-				compilers.Add(compiler.Id, compiler);
+					compiler.Commands.Sort((x, y) => x.Order - y.Order);
+					compilers.Add(compiler.Id, compiler);
+				}
+				catch (Exception ex)
+				{
+					logger.Warn(ex, "Load configuration failed");
+				}
 			}
 
+			logger.Info("Compiler's configuration initialized successfully", directory);
 			return true;
 		}
 
 		public bool HasCompiler(byte id) => 
 			compilers.ContainsKey(id);
-        public bool CheckCompiler(byte id, string name) => 
+		public bool CheckCompiler(byte id, string name) => 
 			HasCompiler(id) && compilers[id].Name == name;
-        public Compiler GetCompiler(byte id) => compilers[id];
+		public Compiler GetCompiler(byte id) => compilers[id];
 		public HashSet<byte> GetCompilers() => 
 			compilersIds ?? (compilersIds = new HashSet<byte>(compilers.Keys));
 	}
