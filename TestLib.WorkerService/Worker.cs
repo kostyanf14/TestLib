@@ -123,10 +123,13 @@ namespace TestLib.Worker
 			{
 				Tester tester = new Tester();
 
-				string program = re.Replace(compiler.Commands[i].Program, match => replacement[match.Value]);
-				string args = re.Replace(isChecker ?
-					compiler.Commands[i].Arguments + " " + compiler.Commands[i].CheckerArguments :
-					compiler.Commands[i].Arguments, match => replacement[match.Value]);
+				string program = compiler.Commands[i].Program.ReplaceByDictionary(re, replacement);
+				string args = compiler.Commands[i].Arguments.ReplaceByDictionary(re, replacement);
+
+				if (isChecker)
+				{
+					args = args + compiler.Commands[i].CheckerArguments.ReplaceByDictionary(re, replacement);
+				}
 
 				tester.SetProgram(program, $"\"{program}\" {args}");
 
@@ -285,8 +288,8 @@ namespace TestLib.Worker
 						binaryFilename: solutionBinaryFilename,
 						workDirecrory: workdir);
 
-					string program = re.Replace(solutionCompiler.RunCommand.Program, match => replacement[match.Value]);
-					string args = re.Replace(solutionCompiler.RunCommand.Arguments, match => replacement[match.Value]);
+					string program = solutionCompiler.RunCommand.Program.ReplaceByDictionary(re, replacement);
+					string args = solutionCompiler.RunCommand.Arguments.ReplaceByDictionary(re, replacement);
 
 					tester.SetProgram(program, $"\"{program}\" {args}");
 
@@ -400,9 +403,9 @@ namespace TestLib.Worker
 						answerFilePath: answerFileFullPath,
 						reportFilePath: reportFileFullPath);
 
-					string program = re.Replace(checkerCompiler.RunCommand.Program, match => replacement[match.Value]);
-					string args = re.Replace(checkerCompiler.RunCommand.Arguments
-						 + " " + checkerCompiler.RunCommand.CheckerArguments, match => replacement[match.Value]);
+					string program = checkerCompiler.RunCommand.Program.ReplaceByDictionary(re, replacement);
+					string args = $"{checkerCompiler.RunCommand.Arguments} {checkerCompiler.RunCommand.CheckerArguments}".
+						ReplaceByDictionary(re, replacement);
 
 					tester.SetProgram(program, $"\"{program}\" {args}");
 

@@ -93,6 +93,7 @@
     <Compile Include="Configuration.cs" />
     <Compile Include="File.cs" />
     <Compile Include="FileProvider.cs" />
+    <Compile Include="StringExtention.cs" />
     <Compile Include="LoggerExtention.cs" />
     <Compile Include="ObjectExtensions.cs" />
     <Compile Include="Problem.cs" />
