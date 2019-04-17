@@ -25,7 +25,21 @@ namespace Internal
 			Internal::logger->Warning(L"Memory limit was not set. workDirectory = '%s', program = '%s'", workDirectory, program);
 		}
 
-		HANDLE hProcessCreationToken = DuplicateCurrentProcessToken();
+		HANDLE hProcessCreationToken;
+
+		if (userInfo.useLogon)
+			hProcessCreationToken = LoginUser();
+		else
+			hProcessCreationToken = DuplicateCurrentProcessToken();
+
+		if (hProcessCreationToken == INVALID_HANDLE_VALUE)
+		{
+			Internal::logger->Error(L"Can't start program while hProcessCreationToken is invalid. workDirectory = '%s', program = '%s'", workDirectory, program);
+
+
+			return false;
+		}
+
 		startupHandles.job = CreateJobObjectW(nullptr, nullptr);
 
 		STARTUPINFOEXW startupInfoEx = { 0 };

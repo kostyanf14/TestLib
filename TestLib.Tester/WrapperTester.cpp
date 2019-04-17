@@ -135,6 +135,21 @@ namespace TestLib
 			Marshal::FreeHGlobal(IntPtr((void*)args_native));
 		}
 
+		void SetUser(String ^ userName, String ^ domain, String ^ password)
+		{
+			using namespace Runtime::InteropServices;
+
+			const wchar_t* userName_native = (const wchar_t*)(Marshal::StringToHGlobalUni(userName)).ToPointer();
+			const wchar_t* domain_native = (const wchar_t*)(Marshal::StringToHGlobalUni(domain)).ToPointer();
+			const wchar_t* password_native = (const wchar_t*)(Marshal::StringToHGlobalUni(password)).ToPointer();
+
+			tester->SetUser(userName_native, domain_native, password_native);
+
+			Marshal::FreeHGlobal(IntPtr((void*)userName_native));
+			Marshal::FreeHGlobal(IntPtr((void*)domain_native));
+			Marshal::FreeHGlobal(IntPtr((void*)password_native));
+		}
+
 		void SetWorkDirectory(String ^ directory)
 		{
 			using namespace Runtime::InteropServices;

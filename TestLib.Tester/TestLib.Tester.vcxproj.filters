@@ -41,5 +41,14 @@
     <ClInclude Include="Types.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Utils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="WrapperTester.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TypesHepler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

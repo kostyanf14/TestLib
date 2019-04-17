@@ -92,6 +92,8 @@ namespace Internal
 			memoryLimitSet = false;
 			workDirSet = false;
 
+			userInfo.useLogon = false;
+
 			IoHandles.input = INVALID_HANDLE_VALUE;
 			IoHandles.output = INVALID_HANDLE_VALUE;
 			IoHandles.error = INVALID_HANDLE_VALUE;
@@ -145,6 +147,8 @@ namespace Internal
 			//free(program);
 			//free(args);
 			//free(workDirectory);
+
+			SecureZeroMemory(userInfo.password, sizeof(wchar_t) * wcslen(userInfo.password));
 		}
 
 		void SetProgram(const wchar_t * _program, const wchar_t * _args)
@@ -153,6 +157,15 @@ namespace Internal
 
 			program = _wcsdup(_program);
 			args = _wcsdup(_args);
+		}
+
+		void SetUser(const wchar_t * _userName, const wchar_t * _domain, const wchar_t * _password)
+		{
+			userInfo.useLogon = true;
+
+			userInfo.userName = _wcsdup(_userName);
+			userInfo.domain   = _wcsdup(_domain);
+			userInfo.password = _wcsdup(_password);
 		}
 
 		void SetWorkDirectory(const wchar_t * _dir)
@@ -493,6 +506,24 @@ namespace Internal
 			return true;
 		}
 
+		HANDLE LoginUser()
+		{
+			HANDLE hToken;
+
+			BOOL res = LogonUserW(userInfo.userName, userInfo.domain, userInfo.domain,
+				LOGON32_LOGON_INTERACTIVE, LOGON32_PROVIDER_DEFAULT, &hToken);
+
+			if (res == 0)
+			{
+				Internal::logger->Error(__FUNCTIONW__ L" failed. Login with username %s failed. Error: %s",
+					userInfo.userName, GetErrorMessage().get());
+
+				return INVALID_HANDLE_VALUE;
+			}
+
+			return hToken;
+		}
+
 		bool programSet;
 		bool realTimeLimitSet;
 		bool memoryLimitSet;
@@ -503,6 +534,14 @@ namespace Internal
 
 		DWORD startTime;
 		TestLib::UsedResources usedResources;
+
+		struct {
+			wchar_t * userName;
+			wchar_t * domain;
+			wchar_t * password;
+
+			bool useLogon;
+		} userInfo;
 
 		struct
 		{

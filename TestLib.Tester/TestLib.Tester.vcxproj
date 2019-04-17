@@ -130,6 +130,9 @@
     <ClCompile Include="WrapperTester.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="TypesHepler.h" />
+    <ClInclude Include="Utils.h" />
+    <ClInclude Include="WrapperTester.h" />
     <ClInclude Include="Logger.h" />
     <ClInclude Include="Types.h" />
     <ClInclude Include="Tester.h" />
