@@ -13,7 +13,7 @@ namespace TestLib.Worker.ClientApi
 
 		Problem DownloadProblem(ulong problemId);
 		ProblemFile DownloadSolution(Submission submission);
-		IEnumerable<Submission> GetSubmissions();
+		IEnumerable<Submission> GetSubmissions(bool retryOnFailed = true);
 
 		RequestMessage GetTakeSubmissionsRequestMessage(ulong id);
 		RequestMessage GetFailSubmissionsRequestMessage(ulong id);
@@ -21,7 +21,7 @@ namespace TestLib.Worker.ClientApi
 		RequestMessage GetSendTestingResultRequestMessage(TestResult result);
 		RequestMessage GetSendLogRequestMessage(SubmissionLog log);
 
-		bool SendRequest(RequestMessage message);
+		bool SendRequest(RequestMessage message, bool retryOnFailed = true);
 
 		uint GetVersion();
 		ApiType GetApiType();

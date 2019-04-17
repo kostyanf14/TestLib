@@ -6,7 +6,9 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Threading;
 using TestLib.Worker.ClientApi.Models;
+using TestLib.WorkerService;
 
 namespace TestLib.Worker.ClientApi
 {
@@ -27,47 +29,65 @@ namespace TestLib.Worker.ClientApi
 			logger.Info("ApiClient initialized");
 		}
 
-		private IEnumerable<Submission> readSubmissions(HashSet<byte> compilers = null)
+		private IEnumerable<Submission> readSubmissions(bool retryOnFailed = true, HashSet<byte> compilers = null)
 		{
 			string endpoint = buildEndpoint("submissions");
-			string jsonSubmissions = client.GetStringAsync(endpoint).Result;
+			string jsonSubmissions;
+			List<Submission> submissions = null;
 
-			JArray parsedSubmissions = JArray.Parse(jsonSubmissions);
-			List<Submission> submissions = new List<Submission>();
-			logger.Debug("Returned {0} submissions", parsedSubmissions.Count);
-
-			byte compilerId = 1;
-			byte checkerCompilerId = 1;
-			for (int i = 0; i < parsedSubmissions.Count; i++)
+			TimeOutHelper time = new TimeOutHelper();
+			do
 			{
-				compilerId = (byte)parsedSubmissions[i]["compiler_id"];
-				checkerCompilerId = (byte)parsedSubmissions[i]["problem"]["checker_compiler_id"];
-
-				if (compilers is null
-					|| (compilers.Contains(compilerId) && compilers.Contains(checkerCompilerId)))
+				try
 				{
-					submissions.Add(
-						new Submission(
-							id: (ulong)parsedSubmissions[i]["id"],
-							sourceUrl: (string)parsedSubmissions[i]["source_url"],
-							compilerId: compilerId,
-							checkerCompilerId: checkerCompilerId,
-							problemId: (ulong)parsedSubmissions[i]["problem"]["id"],
-							problemUpdatedAt: (DateTime)parsedSubmissions[i]["problem"]["updated_at"],
-							memoryLimit: (UInt32)parsedSubmissions[i]["memory_limit"],
-							timeLimit: (UInt32)parsedSubmissions[i]["time_limit"]
-						)
-					);
-				}
-			}
+					jsonSubmissions = client.GetStringAsync(endpoint).Result;
+					JArray parsedSubmissions = JArray.Parse(jsonSubmissions);
+					submissions = new List<Submission>();
+					logger.Debug("Returned {0} submissions", parsedSubmissions.Count);
 
-			logger.Debug("Selected {0} submissions", submissions.Count);
+					byte compilerId = 1;
+					byte checkerCompilerId = 1;
+					for (int i = 0; i < parsedSubmissions.Count; i++)
+					{
+						compilerId = (byte)parsedSubmissions[i]["compiler_id"];
+						checkerCompilerId = (byte)parsedSubmissions[i]["problem"]["checker_compiler_id"];
+
+						if (compilers is null
+							|| (compilers.Contains(compilerId) && compilers.Contains(checkerCompilerId)))
+						{
+							submissions.Add(
+								new Submission(
+									id: (ulong)parsedSubmissions[i]["id"],
+									sourceUrl: (string)parsedSubmissions[i]["source_url"],
+									compilerId: compilerId,
+									checkerCompilerId: checkerCompilerId,
+									problemId: (ulong)parsedSubmissions[i]["problem"]["id"],
+									problemUpdatedAt: (DateTime)parsedSubmissions[i]["problem"]["updated_at"],
+									memoryLimit: (UInt32)parsedSubmissions[i]["memory_limit"],
+									timeLimit: (UInt32)parsedSubmissions[i]["time_limit"]
+								)
+							);
+						}
+					}
+
+					logger.Debug("Selected {0} submissions", submissions.Count);
+
+					break;
+				}
+				catch (HttpRequestException ex)
+				{
+					logger.Error(ex, "GetSubmissions failed with exception.");
+					Thread.Sleep(time.GetTimeOut() * 1000);
+				}
+
+			} while (retryOnFailed);
+
 			return submissions;
 		}
-		public IEnumerable<Submission> GetSubmissions()
-			=> readSubmissions();
-		public IEnumerable<Submission> GetSuitableSubmissions(HashSet<byte> compilers)
-			=> readSubmissions(compilers);
+		public IEnumerable<Submission> GetSubmissions(bool retryOnFailed = true)
+			=> readSubmissions(retryOnFailed: retryOnFailed);
+		public IEnumerable<Submission> GetSuitableSubmissions(HashSet<byte> compilers, bool retryOnFailed = true)
+			=> readSubmissions(retryOnFailed, compilers);
 
 		private ProblemFile downloadFile(string url)
 		{
@@ -156,22 +176,39 @@ namespace TestLib.Worker.ClientApi
 		public RequestMessage GetSendLogRequestMessage(SubmissionLog log) =>
 			 new RequestMessage(buildEndpoint("submissions", log.SubmissionId, "logs"), log.AsJson());
 
-		public bool SendRequest(RequestMessage message)
+		public bool SendRequest(RequestMessage message, bool retryOnFailed = true)
 		{
-			var responseMessage = client.PostAsync(message.RequestUri, message.Data).Result;
-
-			logger.Debug("Request {0} send {1}", message.RequestUri,
-			   responseMessage.StatusCode == HttpStatusCode.NoContent ?
-			   "successfully" : "failed");
-
-			if (responseMessage.StatusCode != HttpStatusCode.NoContent)
+			TimeOutHelper time = new TimeOutHelper();
+			do
 			{
-				logger.Error("Request {0} server error message: {1}. Status code: {2}", message.RequestUri,
-					responseMessage.Content?.ReadAsStringAsync()?.Result,
-					responseMessage.StatusCode);
-			}
+				try
+				{
+					var responseMessage = client.PostAsync(message.RequestUri, message.Data).Result;
 
-			return responseMessage.StatusCode == HttpStatusCode.NoContent;
+					logger.Debug("Request {0} send {1}", message.RequestUri,
+					   responseMessage.StatusCode == HttpStatusCode.NoContent ?
+					   "successfully" : "failed");
+
+					if (responseMessage.StatusCode != HttpStatusCode.NoContent)
+					{
+						logger.Error("Request {0} server error message: {1}. Status code: {2}", message.RequestUri,
+							responseMessage.Content?.ReadAsStringAsync()?.Result,
+							responseMessage.StatusCode);
+					}
+
+					if (!retryOnFailed || responseMessage.StatusCode == HttpStatusCode.NoContent)
+						return responseMessage.StatusCode == HttpStatusCode.NoContent;
+				}
+				catch (HttpRequestException ex)
+				{
+					logger.Error(ex, "SendRequest failed with exception.");
+				}
+
+				Thread.Sleep(time.GetTimeOut() * 1000);
+
+			} while (retryOnFailed);
+
+			return false;
 		}
 
 		public Guid SignUp(WorkerInformation worker)
@@ -209,7 +246,7 @@ namespace TestLib.Worker.ClientApi
 
 		public UpdateWorkerStatus UpdateWorker(Guid id, WorkerInformation worker)
 		{
-				string endpoint = buildEndpoint("workers", id.ToString());
+			string endpoint = buildEndpoint("workers", id.ToString());
 
 			var responseMessage = client.PutAsync(
 				endpoint, new { worker }.AsJson(skipNull: true)).Result;
@@ -236,7 +273,9 @@ namespace TestLib.Worker.ClientApi
 				}
 			}
 			else
+			{
 				return UpdateWorkerStatus.Ok;
+			}
 		}
 
 		public uint GetVersion() => 2;
