@@ -9,7 +9,7 @@ namespace TestLib.Worker
 		{
 			return re.Replace(str,
 				match => replacement.TryGetValue(
-					match.Groups[1].Value, out var value) ? value : match.Value);
+					match.Value, out var value) ? value : match.Value);
 		}
 	}
 }
