@@ -36,7 +36,6 @@ namespace Internal
 		{
 			Internal::logger->Error(L"Can't start program while hProcessCreationToken is invalid. workDirectory = '%s', program = '%s'", workDirectory, program);
 
-
 			return false;
 		}
 
