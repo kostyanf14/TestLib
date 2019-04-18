@@ -93,6 +93,9 @@ namespace Internal
 			workDirSet = false;
 
 			userInfo.useLogon = false;
+			userInfo.userName = nullptr;
+			userInfo.domain = nullptr;
+			userInfo.password = nullptr;
 
 			IoHandles.input = INVALID_HANDLE_VALUE;
 			IoHandles.output = INVALID_HANDLE_VALUE;
@@ -148,7 +151,8 @@ namespace Internal
 			//free(args);
 			//free(workDirectory);
 
-			SecureZeroMemory(userInfo.password, sizeof(wchar_t) * wcslen(userInfo.password));
+			if (userInfo.password != nullptr)
+				SecureZeroMemory(userInfo.password, sizeof(wchar_t) * wcslen(userInfo.password));
 		}
 
 		void SetProgram(const wchar_t * _program, const wchar_t * _args)
@@ -164,7 +168,7 @@ namespace Internal
 			userInfo.useLogon = true;
 
 			userInfo.userName = _wcsdup(_userName);
-			userInfo.domain   = _wcsdup(_domain);
+			userInfo.domain = _wcsdup(_domain);
 			userInfo.password = _wcsdup(_password);
 		}
 
