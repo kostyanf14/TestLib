@@ -128,7 +128,7 @@ namespace TestLib.Worker
 
 				if (isChecker)
 				{
-					args = args + compiler.Commands[i].CheckerArguments.ReplaceByDictionary(re, replacement);
+					args = $"{args} {compiler.Commands[i].CheckerArguments.ReplaceByDictionary(re, replacement)}";
 				}
 
 				tester.SetProgram(program, $"\"{program}\" {args}");
@@ -144,7 +144,7 @@ namespace TestLib.Worker
 				}
 				else
 				{
-					logger.Error("Slot {0}: Can't run compiller", slotNum);
+					logger.Error("Slot {0}: Can't run compiler", slotNum);
 
 					tester.Destroy();
 					return false;
