@@ -211,8 +211,7 @@ namespace TestLib.Worker
 				}
 				catch (Exception ex)
 				{
-					logger.Error("Updating worker information failed with error {0}. Exeption: {1}",
-						ex.GetType().Name, ex.Message);
+					logger.Error(ex, "Updating worker information failed with error {0}", ex.GetType().Name);
 				}
 				finally
 				{
