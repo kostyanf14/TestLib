@@ -74,7 +74,7 @@ namespace TestLib.Worker.ClientApi
 
 					break;
 				}
-				catch (HttpRequestException ex)
+				catch (Exception ex)
 				{
 					logger.Error(ex, "GetSubmissions failed with exception.");
 					Thread.Sleep(time.GetTimeOut() * 1000);
