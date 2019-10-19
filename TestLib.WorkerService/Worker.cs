@@ -448,7 +448,14 @@ namespace TestLib.Worker
 
 			}
 
-			Directory.Delete(workdir, true);
+			try
+			{
+				Directory.Delete(workdir, true);
+			}
+			catch (Exception ex)
+			{
+				logger.Error(ex, "Slot {0}: Can not delete work directory.", slotNum);
+			}
 
 			return WorkerResult.Ok;
 		}
