@@ -40,6 +40,8 @@ namespace TestLib.Worker
 				logger.Info("Testing slot {0} taken submission with id {1}", slotNumber, submission.Id);
 				logger.Debug("Submission: {0}", submission);
 
+				WorkerResult result = WorkerResult.Ok;
+
 				ProblemFile solution = client.DownloadSolution(submission);
 				app.FileProvider.SaveFile(solution);
 
@@ -48,21 +50,30 @@ namespace TestLib.Worker
 					() =>
 					{
 						logger.Debug("Need download problem with id {0}", submission.ProblemId);
-						return client.DownloadProblem(submission.ProblemId);
+						var downloadedProblem = client.DownloadProblem(submission.ProblemId);
+						if (downloadedProblem is null)
+						{
+							logger.Error("Failed to download problem with id {0}", submission.ProblemId);
+							result = WorkerResult.TestingError;
+						}
+
+						return downloadedProblem;
 					}
 				);
 
 				Worker worker = new Worker(slotNumber, client);
-				WorkerResult result;
 
-				try
+				if (result != WorkerResult.TestingError)
 				{
-					result = worker.Testing(submission, problem, solution);
-				}
-				catch (Exception ex)
-				{
-					logger.Error("Slot {0} worker testing failed with exception {1}. Error {2}", slotNumber, ex.GetType().Name, ex);
-					result = WorkerResult.TestingError;
+					try
+					{
+						result = worker.Testing(submission, problem, solution);
+					}
+					catch (Exception ex)
+					{
+						logger.Error("Slot {0} worker testing failed with exception {1}. Error {2}", slotNumber, ex.GetType().Name, ex);
+						result = WorkerResult.TestingError;
+					}
 				}
 
 				switch (result)

@@ -95,9 +95,27 @@ namespace TestLib.Worker.ClientApi
 
 			logger.Debug("Statring download file from {0}", uri);
 
-			ProblemFile solution = new ProblemFile();
-			solution.Content = client.GetAsync(uri).Result.Content.ReadAsByteArrayAsync().Result;
-			return solution;
+			ProblemFile file = new ProblemFile();
+			for (int i = 0; i < 2; i++)
+			{
+				try
+				{
+					file.Content = client.GetAsync(uri).Result.Content.ReadAsByteArrayAsync().Result;
+					break;
+				}
+				catch (Exception ex)
+				{
+					file.Content = null;
+					logger.Error(ex, "Download file failed.");
+				}
+			}
+
+			if (file.Content is null)
+			{
+				return null;
+			}
+
+			return file;
 		}
 		public ProblemFile DownloadSolution(Submission submission) =>
 			downloadFile(submission.SourceUrl);
@@ -122,17 +140,31 @@ namespace TestLib.Worker.ClientApi
 					(string)parsedProblem["tests"][i]["input_url"]
 				);
 
+				if (t.Input is null)
+				{
+					return null;
+				}
+
 				if (!(parsedProblem["tests"][i]["answer_url"] is null))
 				{
 					t.Answer = downloadFile(
-					(string)parsedProblem["tests"][i]["answer_url"]
-				);
+						(string)parsedProblem["tests"][i]["answer_url"]
+					);
+
+					if (t.Answer is null)
+					{
+						return null;
+					}
 				}
 
 				tests[i] = t;
 			}
 
 			ProblemFile checker = downloadFile((string)parsedProblem["checker_source_url"]);
+			if (checker is null)
+			{
+				return null;
+			}
 
 			return new Problem(
 				id: (ulong)parsedProblem["id"],
@@ -197,7 +229,9 @@ namespace TestLib.Worker.ClientApi
 					}
 
 					if (!retryOnFailed || responseMessage.StatusCode == HttpStatusCode.NoContent)
+					{
 						return responseMessage.StatusCode == HttpStatusCode.NoContent;
+					}
 				}
 				catch (HttpRequestException ex)
 				{
