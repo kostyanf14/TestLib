@@ -34,17 +34,14 @@ namespace TestLib.Worker
 
 		public void SaveProblem(Problem problem)
 		{
-			problem.Checker.id = Guid.NewGuid().ToString();
 			SaveFile(problem.Checker);
 
 			foreach (var test in problem.Tests)
 			{
-				test.Input.id = Guid.NewGuid().ToString();
 				SaveFile(test.Input);
 
 				if (test.Answer.Content != null)
 				{
-					test.Answer.id = Guid.NewGuid().ToString();
 					SaveFile(test.Answer);
 				}
 			}
@@ -66,7 +63,7 @@ namespace TestLib.Worker
 			if (file.Content != null)
 			{
 				if (string.IsNullOrEmpty(file.id))
-				file.id = Guid.NewGuid().ToString();
+					file.id = Guid.NewGuid().ToString();
 
 				File.WriteAllBytes(
 					Path.Combine(directory, file.id),
