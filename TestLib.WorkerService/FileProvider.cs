@@ -63,14 +63,17 @@ namespace TestLib.Worker
 
 		public void SaveFile(ProblemFile file)
 		{
-			if (string.IsNullOrEmpty(file.id))
+			if (file.Content != null)
+			{
+				if (string.IsNullOrEmpty(file.id))
 				file.id = Guid.NewGuid().ToString();
 
-			File.WriteAllBytes(
-				Path.Combine(directory, file.id),
-				file.Content);
+				File.WriteAllBytes(
+					Path.Combine(directory, file.id),
+					file.Content);
 
-			file.Content = null;
+				file.Content = null;
+			}
 		}
 		public void Copy(ProblemFile file, string path)
 		{
@@ -89,6 +92,7 @@ namespace TestLib.Worker
 
 		public void LoadContent(ProblemFile file)
 		{
+			file.Content = null;
 			file.Content = File.ReadAllBytes(
 				Path.Combine(directory, file.id));
 		}
