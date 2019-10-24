@@ -89,7 +89,9 @@ namespace Internal
 		{
 			Internal::logger->Error(L"Can't assign process to job in " __FUNCTIONW__ " at line %d. AssignProcessToJobObject failed, error %s", __LINE__, GetErrorMessage().get());
 
-			TerminateProcess(processInfo.hProcess, -1);
+			if (!TerminateProcessS(startupHandles.process, -1))
+				Internal::logger->Error(L"Failed to TerminateProcess. workDirectory = '%s', program = '%s'", workDirectory, program);
+
 			SafeCloseHandle(&processInfo.hThread);
 			SafeCloseHandle(&processInfo.hProcess);
 
@@ -108,7 +110,9 @@ namespace Internal
 		{
 			Internal::logger->Error(L"Process didnot assign to job in " __FUNCTIONW__ " at line %d. IsProcessInJob failed, error %s", __LINE__, GetErrorMessage().get());
 
-			TerminateProcess(processInfo.hProcess, -1);
+			if (!TerminateProcessS(startupHandles.process, -1))
+				Internal::logger->Error(L"Failed to TerminateProcess. workDirectory = '%s', program = '%s'", workDirectory, program);
+
 			SafeCloseHandle(&processInfo.hThread);
 			SafeCloseHandle(&processInfo.hProcess);
 
@@ -126,7 +130,9 @@ namespace Internal
 		{
 			Internal::logger->Error(L"Can't resume main thread in " __FUNCTIONW__ " at line %d. ResumeThread failed, error %s", __LINE__, GetErrorMessage().get());
 
-			TerminateProcess(processInfo.hProcess, -1);
+			if (!TerminateProcessS(startupHandles.process, -1))
+				Internal::logger->Error(L"Failed to TerminateProcess. workDirectory = '%s', program = '%s'", workDirectory, program);
+
 			SafeCloseHandle(&processInfo.hThread);
 			SafeCloseHandle(&processInfo.hProcess);
 
@@ -159,7 +165,14 @@ namespace Internal
 		switch (waitCode)
 		{
 		case WAIT_TIMEOUT:
-			TerminateProcess(startupHandles.process, -1);
+			result = TestLib::WaitingResult::Timeout;
+
+			if (!TerminateProcessS(startupHandles.process, -1))
+			{
+				Internal::logger->Error(L"Failed to TerminateProcess. workDirectory = '%s', program = '%s'", workDirectory, program);
+				result = TestLib::WaitingResult::Fail;
+			}
+
 			SafeCloseHandle(&startupHandles.thread);
 			SafeCloseHandle(&startupHandles.process);
 
@@ -168,12 +181,15 @@ namespace Internal
 
 			usedResources.RealTimeUsageMS = limits.realTimeLimitMs + 1;
 			usedResources.ProcessExitCode = WAIT_TIMEOUT;
-			result = TestLib::WaitingResult::Timeout;
 
 			Internal::logger->Error(L"Waiting program timeout expired. workDirectory = '%s', program = '%s'", workDirectory, program);
 			break;
 		case WAIT_FAILED:
-			TerminateProcess(startupHandles.process, -1);
+			result = TestLib::WaitingResult::Fail;
+			
+			if (!TerminateProcessS(startupHandles.process, -1))
+				Internal::logger->Error(L"Failed to TerminateProcess. workDirectory = '%s', program = '%s'", workDirectory, program);
+
 			SafeCloseHandle(&startupHandles.thread);
 			SafeCloseHandle(&startupHandles.process);
 
@@ -181,7 +197,6 @@ namespace Internal
 			SafeCloseHandle(&startupHandles.job);
 
 			usedResources.ProcessExitCode = -1;
-			result = TestLib::WaitingResult::Fail;
 
 			Internal::logger->Error(L"Waiting program failed. workDirectory = '%s', program = '%s'", workDirectory, program);
 			break;

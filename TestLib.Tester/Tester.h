@@ -131,7 +131,7 @@ namespace Internal
 
 			if (startupHandles.process != INVALID_HANDLE_VALUE)
 			{
-				TerminateProcess(startupHandles.process, 0);
+				TerminateProcessS(startupHandles.process, 0);
 				//SafeCloseHandle(&startupHandles.process);
 				//SafeCloseHandle(&startupHandles.thread);
 			}

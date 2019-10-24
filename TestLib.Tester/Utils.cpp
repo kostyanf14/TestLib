@@ -16,6 +16,26 @@ void SafeCloseHandle(PHANDLE _h)
 	*_h = INVALID_HANDLE_VALUE;
 }
 
+BOOL TerminateProcessS(HANDLE hProcess, UINT uExitCode)
+{
+	UINT _2Minutes = 2 * 60 * 1000;
+	TerminateProcess(hProcess, uExitCode);
+
+	DWORD waitCode = WaitForSingleObject(hProcess, _2Minutes);
+	switch (waitCode)
+	{
+	case WAIT_TIMEOUT:
+	case WAIT_FAILED:
+		return FALSE;
+
+	case WAIT_OBJECT_0:
+		return TRUE;
+	default:
+		return FALSE;
+	}
+
+}
+
 UniqueLocalStringType GetErrorMessage(DWORD error)
 {
 	wchar_t * buffer;
