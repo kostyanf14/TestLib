@@ -15,6 +15,7 @@ namespace TestLib.Worker.ClientApi
 	internal class HttpCodelabsApiClient : IApiClient
 	{
 		private static Logger logger = LogManager.GetCurrentClassLogger();
+		private static Application app = Application.Get();
 		private HttpClient client;
 		public HttpCodelabsApiClient()
 		{
@@ -144,6 +145,10 @@ namespace TestLib.Worker.ClientApi
 				{
 					return null;
 				}
+				else
+				{
+					app.FileProvider.SaveFile(t.Input);
+				}
 
 				if (!(parsedProblem["tests"][i]["answer_url"] is null))
 				{
@@ -154,6 +159,10 @@ namespace TestLib.Worker.ClientApi
 					if (t.Answer is null)
 					{
 						return null;
+					}
+					else
+					{
+						app.FileProvider.SaveFile(t.Answer);
 					}
 				}
 
