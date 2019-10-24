@@ -80,6 +80,7 @@ namespace TestLib.Worker
 			problemsNode.Add(problem.Id, cachedProblems.First);
 			problems.Add(problem.Id, problem);
 			Application.Get().FileProvider.SaveProblem(problem);
+			GC.Collect();
 		}
 
 		private void updateProblem(Problem newProblem)
