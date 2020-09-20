@@ -1,0 +1,20 @@
+os: windows
+language: cpp
+
+# There is an issue with filering secrets on Windows
+# See https://travis-ci.community/t/choco-install-hangs-forever/307/20
+# Take extra care to NOT PRINT SECRET VARIABLES during the build!
+filter_secrets: false
+
+git:
+  depth: false
+
+install:
+  - choco install windows-sdk-10-version-1809-all nuget.commandline
+
+script:
+  - export PATH="$PATH:/c/Program Files (x86)/Microsoft Visual Studio/Installer/"
+  - export MSVC="$(vswhere -latest -products "*" -requires Microsoft.Component.MSBuild -property installationPath)"
+  - export MSVC="$(echo /$MSVC | sed -e 's/\\/\//g' -e 's/://')"
+  - export PATH="$PATH:$MSVC/MSBuild/15.0/Bin/amd64/"
+  - ./ci.sh
