@@ -1,4 +1,4 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27703.2035
@@ -58,14 +58,14 @@ Global
 		{80A1A18B-5CC4-4490-A93D-DB66343EDDB8}.Release|x86.Build.0 = Release|Any CPU
 		{D58DDEAB-B2DE-408D-A85C-59EF26C84E50}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{D58DDEAB-B2DE-408D-A85C-59EF26C84E50}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D58DDEAB-B2DE-408D-A85C-59EF26C84E50}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{D58DDEAB-B2DE-408D-A85C-59EF26C84E50}.Debug|x64.Build.0 = Debug|Any CPU
+		{D58DDEAB-B2DE-408D-A85C-59EF26C84E50}.Debug|x64.ActiveCfg = Debug|x64
+		{D58DDEAB-B2DE-408D-A85C-59EF26C84E50}.Debug|x64.Build.0 = Debug|x64
 		{D58DDEAB-B2DE-408D-A85C-59EF26C84E50}.Debug|x86.ActiveCfg = Debug|x86
 		{D58DDEAB-B2DE-408D-A85C-59EF26C84E50}.Debug|x86.Build.0 = Debug|x86
 		{D58DDEAB-B2DE-408D-A85C-59EF26C84E50}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D58DDEAB-B2DE-408D-A85C-59EF26C84E50}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D58DDEAB-B2DE-408D-A85C-59EF26C84E50}.Release|x64.ActiveCfg = Release|Any CPU
-		{D58DDEAB-B2DE-408D-A85C-59EF26C84E50}.Release|x64.Build.0 = Release|Any CPU
+		{D58DDEAB-B2DE-408D-A85C-59EF26C84E50}.Release|x64.ActiveCfg = Release|x64
+		{D58DDEAB-B2DE-408D-A85C-59EF26C84E50}.Release|x64.Build.0 = Release|x64
 		{D58DDEAB-B2DE-408D-A85C-59EF26C84E50}.Release|x86.ActiveCfg = Release|x86
 		{D58DDEAB-B2DE-408D-A85C-59EF26C84E50}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
