@@ -20,22 +20,21 @@ namespace TestLib.Worker.Updater
 		[STAThread]
 		private static void Main(string[] args)
 		{
-			//args[0] - current app
-			//args[1] - pid
-			//args[2] - Directory
-			//args[3] - "TestLib.Worker.exe"
+			//args[0] - pid
+			//args[1] - Directory
+			//args[2] - "TestLib.Worker.exe"
 
-			if (args.Length != 4)
+			if (args.Length != 3)
 			{
 				File.AppendAllText("log.txt", 
-					string.Format("Count of arguments must be 4. Incorrect argument list."));
+					string.Format("Count of arguments must be 3. Incorrect argument list."));
 				return;
 			}
 
 			Process process = null;
 			try
 			{
-				process = Process.GetProcessById(int.Parse(args[1]));
+				process = Process.GetProcessById(int.Parse(args[0]));
 				process.WaitForExit();
 			}
 			catch (Exception ex)
@@ -48,8 +47,8 @@ namespace TestLib.Worker.Updater
 
 			WebClient client = new WebClient();
 
-			string exeDir = args[2];
-			string exePath = Path.Combine(exeDir, args[3]);
+			string exeDir = args[1];
+			string exePath = Path.Combine(exeDir, args[2]);
 
 			Configuration config = ConfigurationManager.OpenExeConfiguration(exePath);
 			string latestVersionUrl =
