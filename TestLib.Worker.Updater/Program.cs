@@ -32,10 +32,23 @@ namespace TestLib.Worker.Updater
 			}
 
 			Process process = null;
+			int processId = int.Parse(args[0]);
 			try
 			{
-				process = Process.GetProcessById(int.Parse(args[0]));
+				process = Process.GetProcessById(processId);
 				process.WaitForExit();
+			}
+			catch (Exception ex)
+			{
+				process = null;
+				File.AppendAllText("log.txt",
+					string.Format("Failed to get process by Id {0}. Waiting skipped. Ex: {1}",
+					processId, ex));
+			}
+			try
+			{
+				if (process != null)
+					process.WaitForExit();
 			}
 			catch (Exception ex)
 			{
