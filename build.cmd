@@ -7,7 +7,7 @@ set _ARTIFACTS_DIR_="%~dp0\artifacts"
 if not exist "!_ARTIFACTS_DIR_!" mkdir "!_ARTIFACTS_DIR_!"
 
 call :nuget "%%~dp0\TestLib.sln"
-rem if !ERRORLEVEL! NEQ 0 exit /B 1
+if !ERRORLEVEL! NEQ 0 exit /B 1
 
 call :build "%%~dp0\TestLib.Worker.Updater" "TestLib.Worker.Updater.csproj" "Release" "AnyCPU"
 if !ERRORLEVEL! NEQ 0 exit /B 1
