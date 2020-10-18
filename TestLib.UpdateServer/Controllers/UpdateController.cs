@@ -32,6 +32,8 @@ namespace TestLib.UpdateServer.Controllers
 		// GET: api/Update/
 		public async Task<HttpResponseMessage> Get(HttpRequestMessage request, string version, string platform)
 		{
+			var config = App_Start.Configuration.Get();
+
 			UpdatePlatform platformInfo;
 			if (!Enum.TryParse(platform, true, out platformInfo) || platformInfo == UpdatePlatform.None)
 			{
@@ -41,7 +43,7 @@ namespace TestLib.UpdateServer.Controllers
 			}
 
 			string latestVersionFilePath = Path.Combine(
-					Helpers.ReleasesPath, platformInfo.ToString(), Helpers.ReleasesLatestVersionFileName);
+					config.ReleasesDirectory, platformInfo.ToString(), config.ReleaseLatestVersionFileName);
 
 			Version parsedVersion;
 			if (version == "latest")
@@ -56,7 +58,7 @@ namespace TestLib.UpdateServer.Controllers
 
 			var stream = new MemoryStream();
 			using (var file = File.OpenRead(Path.Combine(
-					Helpers.ReleasesPath, platformInfo.ToString(), $"{UpdateType.Full}.{parsedVersion}.zip")))
+					config.ReleasesDirectory, platformInfo.ToString(), $"{UpdateType.Full}.{parsedVersion}.zip")))
 				file.CopyTo(stream);
 
 			var response = new HttpResponseMessage(HttpStatusCode.OK);
@@ -75,6 +77,8 @@ namespace TestLib.UpdateServer.Controllers
 		// POST: api/Update
 		public async Task<HttpResponseMessage> Post(HttpRequestMessage request, string platform, string token)
 		{
+			var config = App_Start.Configuration.Get();
+
 			int currentRequestId = Interlocked.Increment(ref id);
 			logger.Debug("Request {0}: New file was uploded", currentRequestId);
 
@@ -102,11 +106,11 @@ namespace TestLib.UpdateServer.Controllers
 				return request.CreateResponse(HttpStatusCode.BadRequest);
 			}
 
-			string platformReleasesPath = Path.Combine(Helpers.ReleasesPath, platformInfo.ToString());
+			string platformReleasesPath = Path.Combine(config.ReleasesDirectory, platformInfo.ToString());
 			if (!Directory.Exists(platformReleasesPath))
 				Directory.CreateDirectory(platformReleasesPath);
 
-			string tempDir = Path.Combine(Helpers.TempPath, DateTime.Now.ToBinary().ToString());
+			string tempDir = Path.Combine(config.TempDirectory, DateTime.Now.ToBinary().ToString());
 			string tempFile = $"{tempDir}.tmp";
 
 			using (Stream fileStream = File.Create(tempFile))
@@ -148,7 +152,7 @@ namespace TestLib.UpdateServer.Controllers
 			var fvi = FileVersionInfo.GetVersionInfo(exeFile);
 			var version = $"{fvi.ProductMajorPart}.{fvi.ProductMinorPart}.{fvi.ProductBuildPart}.{fvi.ProductPrivatePart}";
 
-			string latestVersionFilePath = Path.Combine(platformReleasesPath, Helpers.ReleasesLatestVersionFileName);
+			string latestVersionFilePath = Path.Combine(platformReleasesPath, config.ReleaseLatestVersionFileName);
 			try
 			{
 				Version latestVersion;
