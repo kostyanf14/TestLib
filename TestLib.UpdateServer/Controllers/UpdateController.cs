@@ -30,11 +30,22 @@ namespace TestLib.UpdateServer.Controllers
 		}
 
 		// GET: api/Update/
-		public async Task<HttpResponseMessage> Get(HttpRequestMessage request, string version)
+		public async Task<HttpResponseMessage> Get(HttpRequestMessage request, string version, string platform)
 		{
+			UpdatePlatform platformInfo;
+			if (!Enum.TryParse(platform, true, out platformInfo) || platformInfo == UpdatePlatform.None)
+			{
+				logger.Warn("Can't parse platform {0}", platform);
+
+				return request.CreateResponse(HttpStatusCode.BadRequest);
+			}
+
+			string latestVersionFilePath = Path.Combine(
+					Helpers.ReleasesPath, platformInfo.ToString(), Helpers.ReleasesLatestVersionFileName);
+
 			Version parsedVersion;
 			if (version == "latest")
-				parsedVersion = Version.Parse(File.ReadAllText(Helpers.ReleasesLatestVersionFilePath));
+				parsedVersion = Version.Parse(File.ReadAllText(latestVersionFilePath));
 			else
 			if (!Version.TryParse(version, out parsedVersion))
 			{
@@ -44,7 +55,8 @@ namespace TestLib.UpdateServer.Controllers
 			}
 
 			var stream = new MemoryStream();
-			using (var file = File.OpenRead(Path.Combine(Helpers.ReleasesPath, $"{UpdateType.Full}.{parsedVersion}.zip")))
+			using (var file = File.OpenRead(Path.Combine(
+					Helpers.ReleasesPath, platformInfo.ToString(), $"{UpdateType.Full}.{parsedVersion}.zip")))
 				file.CopyTo(stream);
 
 			var response = new HttpResponseMessage(HttpStatusCode.OK);
@@ -61,28 +73,50 @@ namespace TestLib.UpdateServer.Controllers
 		}
 
 		// POST: api/Update
-		public void Post([FromBody]Update update)
-		{
-		}
-
-		public async Task<HttpResponseMessage> Put(HttpRequestMessage request)
+		public async Task<HttpResponseMessage> Post(HttpRequestMessage request, string platform, string token)
 		{
 			int currentRequestId = Interlocked.Increment(ref id);
-
 			logger.Debug("Request {0}: New file was uploded", currentRequestId);
 
-			string dir = Path.Combine(Helpers.TempPath, DateTime.Now.ToBinary().ToString());
-			string file = dir + ".tmp";
+			if (!Helpers.CheckRequestToken(token))
+            {
+				logger.Warn("Bad request token {0}", token);
 
-			Stream webStream = await request.Content.ReadAsStreamAsync();
-			using (Stream fileStream = File.Create(file))
-				await webStream.CopyToAsync(fileStream);
+				return request.CreateResponse(HttpStatusCode.BadRequest);
+			}
 
-			logger.Debug("Request {0}: File was copied to {1}", currentRequestId, file);
+			if (HttpContext.Current.Request.Files.Count != 1)
+			{
+				logger.Warn("No file in request {0}", platform);
+
+				return request.CreateResponse(HttpStatusCode.BadRequest);
+			}
+
+			var postedFile = HttpContext.Current.Request.Files[0];
+
+			UpdatePlatform platformInfo;
+			if (!Enum.TryParse(platform, true, out platformInfo) || platformInfo == UpdatePlatform.None)
+			{
+				logger.Warn("Can't parse platform {0}", platform);
+
+				return request.CreateResponse(HttpStatusCode.BadRequest);
+			}
+
+			string platformReleasesPath = Path.Combine(Helpers.ReleasesPath, platformInfo.ToString());
+			if (!Directory.Exists(platformReleasesPath))
+				Directory.CreateDirectory(platformReleasesPath);
+
+			string tempDir = Path.Combine(Helpers.TempPath, DateTime.Now.ToBinary().ToString());
+			string tempFile = $"{tempDir}.tmp";
+
+			using (Stream fileStream = File.Create(tempFile))
+				await postedFile.InputStream.CopyToAsync(fileStream);
+
+			logger.Debug("Request {0}: File was copied to {1}", currentRequestId, tempFile);
 
 			try
 			{
-				ZipFile.ExtractToDirectory(file, dir);
+				ZipFile.ExtractToDirectory(tempFile, tempDir);
 			}
 			catch (InvalidDataException ex)
 			{
@@ -91,7 +125,7 @@ namespace TestLib.UpdateServer.Controllers
 				return request.CreateResponse(HttpStatusCode.BadRequest);
 			}
 
-			var updateFiles = Directory.GetFiles(dir);
+			var updateFiles = Directory.GetFiles(tempDir);
 			var updateFileNames = updateFiles.Select(f => Path.GetFileName(f)).ToArray();
 
 			var updateInfo = Update.CheckUpdateFileNames(updateFileNames);
@@ -114,18 +148,19 @@ namespace TestLib.UpdateServer.Controllers
 			var fvi = FileVersionInfo.GetVersionInfo(exeFile);
 			var version = $"{fvi.ProductMajorPart}.{fvi.ProductMinorPart}.{fvi.ProductBuildPart}.{fvi.ProductPrivatePart}";
 
+			string latestVersionFilePath = Path.Combine(platformReleasesPath, Helpers.ReleasesLatestVersionFileName);
 			try
 			{
 				Version latestVersion;
-				if (File.Exists(Helpers.ReleasesLatestVersionFilePath))
-					latestVersion = Version.Parse(File.ReadAllText(Helpers.ReleasesLatestVersionFilePath));
+				if (File.Exists(latestVersionFilePath))
+					latestVersion = Version.Parse(File.ReadAllText(latestVersionFilePath));
 				else
 					latestVersion = Version.Parse("0.0.0.0");
 
 				var currentVersion = Version.Parse(version);
 				if (currentVersion > latestVersion)
 				{
-					File.WriteAllText(Helpers.ReleasesLatestVersionFilePath, version);
+					File.WriteAllText(latestVersionFilePath, version);
 				}
 			}
 			catch (Exception ex)
@@ -142,10 +177,10 @@ namespace TestLib.UpdateServer.Controllers
 				return request.CreateResponse(HttpStatusCode.BadRequest);
 			}
 
-			var releaseFile = Path.Combine(Helpers.ReleasesPath, $"{updateInfo.type}.{version}.zip");
+			var releaseFile = Path.Combine(platformReleasesPath, $"{updateInfo.type}.{version}.zip");
 			try
 			{
-				File.Move(file, releaseFile);
+				File.Move(tempFile, releaseFile);
 			}
 			catch (Exception ex)
 			{
@@ -153,9 +188,8 @@ namespace TestLib.UpdateServer.Controllers
 
 				return request.CreateResponse(HttpStatusCode.BadRequest);
 			}
-
+			
 			return request.CreateResponse(HttpStatusCode.Created);
 		}
-
 	}
 }
