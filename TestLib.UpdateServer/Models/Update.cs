@@ -13,16 +13,16 @@ namespace TestLib.UpdateServer.Models
 		Full,
 	}
 
+	public enum UpdatePlatform
+	{
+		None,
+		x86,
+		x64,
+	}
+
 	public class Update
 	{
 		public UpdateType Type;
-
-		public int VersionMajorPart;
-		public int VersionMinorPart;
-		public int VersionBuildPart;
-		public int VersionPrivatePart;
-
-		public bool Mandatory;
 
 		public static (bool valid, UpdateType type) CheckUpdateFileNames(string[] files)
 		{
@@ -42,13 +42,10 @@ namespace TestLib.UpdateServer.Models
 			Array.Sort(fullUpdate);
 			Array.Sort(files);
 
-			for (int i = 0; i < fullUpdate.Length; i++)
-			{
-				if (fullUpdate[i] != files[i])
-					return (false, UpdateType.None);
-			}
+			if (files.SequenceEqual(fullUpdate))
+				return (true, UpdateType.Full);
 
-			return (true, UpdateType.Full);
+			return (false, UpdateType.None);
 		}
 	}
 }
