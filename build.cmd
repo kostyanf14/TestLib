@@ -11,8 +11,8 @@ if !ERRORLEVEL! NEQ 0 exit /B 1
 
 call :build "%%~dp0\TestLib.Worker.Updater" "TestLib.Worker.Updater.csproj" "Release" "AnyCPU"
 if !ERRORLEVEL! NEQ 0 exit /B 1
-call :build "%%~dp0\TestLib.UpdateServer" "TestLib.UpdateServer.csproj" "Release" "AnyCPU"
-if !ERRORLEVEL! NEQ 0 exit /B 1
+rem call :build "%%~dp0\TestLib.UpdateServer" "TestLib.UpdateServer.csproj" "Release" "AnyCPU"
+rem if !ERRORLEVEL! NEQ 0 exit /B 1
 call :build "%%~dp0\TestLib.WorkerService" "TestLib.WorkerService.csproj" "Release" "x64"
 if !ERRORLEVEL! NEQ 0 exit /B 1
 call :build "%%~dp0\TestLib.WorkerService" "TestLib.WorkerService.csproj" "Release" "x86"
