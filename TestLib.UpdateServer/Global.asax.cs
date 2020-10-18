@@ -15,7 +15,7 @@ namespace TestLib.UpdateServer
 		{
 			GlobalConfiguration.Configure(WebApiConfig.Register);
 
-			Configuration.Get().Init();
+			Configuration.Get().Init(Server);
 			Helpers.StartApplication(Server);
 		}
 	}

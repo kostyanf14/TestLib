@@ -18,6 +18,8 @@ namespace TestLib.UpdateServer.Controllers
 
 		public HttpResponseMessage Get(HttpRequestMessage request, string platform)
 		{
+			var config = App_Start.Configuration.Get();
+
 			UpdatePlatform platformInfo;
 			if (!Enum.TryParse(platform, true, out platformInfo) || platformInfo == UpdatePlatform.None)
 			{
@@ -26,8 +28,8 @@ namespace TestLib.UpdateServer.Controllers
 				return request.CreateResponse(HttpStatusCode.BadRequest);
 			}
 
-			string latestVersionFilePath = Path.Combine(Helpers.ReleasesPath, platformInfo.ToString(),
-				Helpers.ReleasesLatestVersionFileName);
+			string latestVersionFilePath = Path.Combine(config.ReleasesDirectory, platformInfo.ToString(),
+				config.ReleaseLatestVersionFileName);
 
 			if (!File.Exists(latestVersionFilePath))
 			{

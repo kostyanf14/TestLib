@@ -14,26 +14,15 @@ namespace TestLib.UpdateServer.App_Start
 	{
 		private static readonly Logger logger = LogManager.GetCurrentClassLogger();
 
-        public static string TempPath { get; private set; }
-        public static string ReleasesPath { get; private set; }
-        public static string ReleasesLatestVersionFileName { get => "latest.ver"; }
-
         public static void StartApplication(HttpServerUtility server)
 		{
 			var logPath = server.MapPath("~/Logs");
 			if (!Directory.Exists(logPath))
 				Directory.CreateDirectory(logPath);
 
-			TempPath = server.MapPath("~/Temp");
-			if (!Directory.Exists(TempPath))
-				Directory.CreateDirectory(TempPath);
-
-			ReleasesPath = server.MapPath("~/App_Data/Releases");
-			if (!Directory.Exists(ReleasesPath))
-				Directory.CreateDirectory(ReleasesPath);
-
 			logger.Info("Application initialization complete");
 		}
+
 		private static byte[] HashHMAC(byte[] key, byte[] message)
 		{
 			var hash = new HMACSHA256(key);
