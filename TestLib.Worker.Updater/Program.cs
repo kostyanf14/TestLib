@@ -65,11 +65,18 @@ namespace TestLib.Worker.Updater
 
 			Configuration config = ConfigurationManager.OpenExeConfiguration(exePath);
 			string latestVersionUrl =
-				config?.AppSettings?.Settings["update_latest_version_url"]?.Value
-				?? "http://localhost:8081/api/version";
+				config?.AppSettings?.Settings["update_latest_version_url"]?.Value;
 			string latestProgramUrl =
-				config?.AppSettings?.Settings["update_latest_program_url"]?.Value
-				?? "http://localhost:8081/api/update?version=latest";
+				config?.AppSettings?.Settings["update_latest_program_url"]?.Value;
+
+			if (string.IsNullOrEmpty(latestVersionUrl) || string.IsNullOrEmpty(latestProgramUrl))
+            {
+				File.AppendAllText("log.txt",
+					string.Format("Apllication update server is not spesified. Update is impossible.",
+					latestVersionUrl, latestProgramUrl));
+
+				return;
+			}
 
 			string stringVersion = client.DownloadString(latestVersionUrl).Replace("\"", "");
 			if (!Version.TryParse(stringVersion, out var latestVersion))
