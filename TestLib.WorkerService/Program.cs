@@ -43,7 +43,8 @@ namespace TestLib.WorkerService
 						case "update":
 							logger.Info("Starting checking update");
 
-							Application.Get().Update();
+							if (Application.Get().Update() == CheckUpdateStatus.Restart)
+								return;
 							break;
 						case "start":
 							if (!Application.Get().Initialized)
