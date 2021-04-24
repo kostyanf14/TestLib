@@ -158,14 +158,10 @@ namespace TestLib.Worker
 					Version current = GetVersion();
 					if (version > current)
 					{
-						var msg = string.Format("Latest version {0}, current version {1}: update is necessary.", version, current);
-
-						logger.Info(msg);
-						Console.WriteLine(msg);
+						logger.Info(string.Format("Latest version {0}, current version {1}: update is necessary.", version, current));
 
 						var args = new string[]
 						{
-							"TestLib.Worker.Updater.exe",
 							Process.GetCurrentProcess().Id.ToString(),
 							Directory.GetCurrentDirectory(),
 							AppDomain.CurrentDomain.FriendlyName,
@@ -176,10 +172,7 @@ namespace TestLib.Worker
 					}
 					else
 					{
-						var msg = string.Format("Latest version {0}, current version {1}: update is not necessary.", version, current);
-
-						logger.Info(msg);
-						Console.WriteLine(msg);
+						logger.Info(string.Format("Latest version {0}, current version {1}: update is not necessary.", version, current));
 
 						return CheckUpdateStatus.Ok;
 					}

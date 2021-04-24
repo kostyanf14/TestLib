@@ -36,7 +36,6 @@ namespace TestLib.Worker.Updater
 			try
 			{
 				process = Process.GetProcessById(processId);
-				process.WaitForExit();
 			}
 			catch (Exception ex)
 			{
