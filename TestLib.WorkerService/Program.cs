@@ -22,36 +22,45 @@ namespace TestLib.WorkerService
 			{
 				logger.Info("Application must run as service, but run at user mode with {0} arguments.", args.Length);
 
-				string command;
-				if (args.Length > 0)
+				for (int args_i = 0; ; args_i++)
 				{
-					command = args[0];
-				}
-				else
-				{
-					command = Console.ReadLine();
-				}
+					string command = args_i < args.Length ? args[args_i] : Console.ReadLine();
+					if (string.IsNullOrWhiteSpace(command))
+						continue;
 
-				switch (command)
-				{
-					case "install":
-						logger.Info("Starting install service");
+					switch (command)
+					{
+						case "install":
+							logger.Info("Starting install service");
 
-						ManagedInstallerClass.InstallHelper(new string[] { Assembly.GetExecutingAssembly().Location });
-						break;
-					case "uninstall":
-						logger.Info("Starting uninstall service");
+							ManagedInstallerClass.InstallHelper(new string[] { Assembly.GetExecutingAssembly().Location });
+							break;
+						case "uninstall":
+							logger.Info("Starting uninstall service");
 
-						ManagedInstallerClass.InstallHelper(new string[] { "/u", Assembly.GetExecutingAssembly().Location });
-						break;
-					case "update":
-						logger.Info("Starting checking update");
+							ManagedInstallerClass.InstallHelper(new string[] { "/u", Assembly.GetExecutingAssembly().Location });
+							break;
+						case "update":
+							logger.Info("Starting checking update");
 
-						Application.Get().Update();
-						break;
-					default:
-						logger.Info("Unknown command.");
-						break;
+							Application.Get().Update();
+							break;
+						case "start":
+							if (!Application.Get().Initialized)
+								if (!Application.Get().Init())
+									break;
+							Application.Get().Start();
+							break;
+						case "stop":
+							Application.Get().Stop();
+							break;
+						case "exit":
+							Application.Get().Stop();
+							return;
+						default:
+							logger.Info("Command '{0}' is unknown", command);
+							break;
+					}
 				}
 			}
 			else

@@ -32,6 +32,7 @@ namespace TestLib.Worker
 	internal sealed class Application
 	{
 		private static Application application;
+		public bool Initialized { get; private set; }
 		public static Application Get() => application ?? (application = new Application());
 
 		private Application()
@@ -54,7 +55,8 @@ namespace TestLib.Worker
 			workerTasks = new WorkerTaskManager();
 		}
 
-		public bool Init()
+		public bool Init() => Initialized = init();
+		private bool init()
 		{
 			LoggerManaged.InitNativeLogger(new LoggerManaged.LogEventHandler(LogManager.GetLogger("Native").Log));
 
