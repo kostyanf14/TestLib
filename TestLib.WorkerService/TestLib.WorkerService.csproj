@@ -5,7 +5,7 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{D58DDEAB-B2DE-408D-A85C-59EF26C84E50}</ProjectGuid>
-    <OutputType>WinExe</OutputType>
+    <OutputType>Exe</OutputType>
     <RootNamespace>TestLib.WorkerService</RootNamespace>
     <AssemblyName>TestLib.WorkerService</AssemblyName>
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>

@@ -22,29 +22,36 @@ namespace TestLib.WorkerService
 			{
 				logger.Info("Application must run as service, but run at user mode with {0} arguments.", args.Length);
 
+				string command;
 				if (args.Length > 0)
 				{
-					switch (args[0])
-					{
-						case "install":
-							logger.Info("Starting install service");
+					command = args[0];
+				}
+				else
+				{
+					command = Console.ReadLine();
+				}
 
-							ManagedInstallerClass.InstallHelper(new string[] { Assembly.GetExecutingAssembly().Location });
-							break;
-						case "uninstall":
-							logger.Info("Starting uninstall service");
+				switch (command)
+				{
+					case "install":
+						logger.Info("Starting install service");
 
-							ManagedInstallerClass.InstallHelper(new string[] { "/u", Assembly.GetExecutingAssembly().Location });
-							break;
-						case "update":
-							logger.Info("Starting checking update");
+						ManagedInstallerClass.InstallHelper(new string[] { Assembly.GetExecutingAssembly().Location });
+						break;
+					case "uninstall":
+						logger.Info("Starting uninstall service");
 
-							Application.Get().Update();
-							break;
-						default:
-							logger.Info("Unknown command.");
-							break;
-					}
+						ManagedInstallerClass.InstallHelper(new string[] { "/u", Assembly.GetExecutingAssembly().Location });
+						break;
+					case "update":
+						logger.Info("Starting checking update");
+
+						Application.Get().Update();
+						break;
+					default:
+						logger.Info("Unknown command.");
+						break;
 				}
 			}
 			else
