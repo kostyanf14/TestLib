@@ -1,3 +1,4 @@
+using Newtonsoft.Json.Linq;
 using System;
 using System.Configuration;
 using System.Diagnostics;
@@ -17,6 +18,11 @@ namespace TestLib.Worker.Updater
 				fvi.ProductBuildPart, fvi.ProductPrivatePart);
 		}
 
+		private static void log(string msg)
+		{
+			File.AppendAllText("updater_log.txt", string.Format("[{0}] {1}\n", DateTime.Now.ToString(), msg));
+		}
+
 		[STAThread]
 		private static void Main(string[] args)
 		{
@@ -26,12 +32,11 @@ namespace TestLib.Worker.Updater
 
 			if (args.Length != 3)
 			{
-				File.AppendAllText("log.txt", 
-					string.Format("Count of arguments must be 3. Incorrect argument list."));
+				log(string.Format("Count of arguments must be 3. Incorrect argument list."));
 				return;
 			}
 
-			Process process = null;
+			Process process;
 			int processId = int.Parse(args[0]);
 			try
 			{
@@ -40,9 +45,7 @@ namespace TestLib.Worker.Updater
 			catch (Exception ex)
 			{
 				process = null;
-				File.AppendAllText("log.txt",
-					string.Format("Failed to get process by Id {0}. Waiting skipped. Ex: {1}",
-					processId, ex));
+				log(string.Format("Failed to get process by Id {0}. Waiting skipped. Exception: {1}", processId, ex));
 			}
 			try
 			{
@@ -51,9 +54,7 @@ namespace TestLib.Worker.Updater
 			}
 			catch (Exception ex)
 			{
-				File.AppendAllText("log.txt",
-					string.Format("Error waiting for process {0}({1}) end: {2}",
-					process?.ProcessName, process?.Id, ex));
+				log(string.Format("Error waiting for process {0}({1}) end. Exception: {2}", process?.ProcessName, process?.Id, ex));
 				return;
 			}
 
@@ -63,27 +64,21 @@ namespace TestLib.Worker.Updater
 			string exePath = Path.Combine(exeDir, args[2]);
 
 			Configuration config = ConfigurationManager.OpenExeConfiguration(exePath);
-			string latestVersionUrl =
-				config?.AppSettings?.Settings["update_latest_version_url"]?.Value;
-			string latestProgramUrl =
-				config?.AppSettings?.Settings["update_latest_program_url"]?.Value;
+			string latestUpdateUrl =
+				config?.AppSettings?.Settings["latest_update_url"]?.Value;
 
-			if (string.IsNullOrEmpty(latestVersionUrl) || string.IsNullOrEmpty(latestProgramUrl))
-            {
-				File.AppendAllText("log.txt",
-					string.Format("Apllication update server is not spesified. Update is impossible.",
-					latestVersionUrl, latestProgramUrl));
-
+			if (string.IsNullOrEmpty(latestUpdateUrl))
+			{
+				log(string.Format("Apllication update server is not spesified. Update is impossible."));
 				return;
 			}
 
-			string stringVersion = client.DownloadString(latestVersionUrl).Replace("\"", "");
+			JToken jsonVersion = JToken.Parse(client.DownloadString(latestUpdateUrl));
+			string stringVersion = (string)jsonVersion["version"];
+			string latestBinaryUrl = (string)jsonVersion["binary_url"];
 			if (!Version.TryParse(stringVersion, out var latestVersion))
 			{
-				File.AppendAllText("log.txt",
-					string.Format("Can't parse latest version {0} from update server {1}. Update not available.",
-					stringVersion, latestVersionUrl));
-
+				log(string.Format("Can't parse latest version {0} from update server {1}. Update not available.", stringVersion, latestUpdateUrl));
 				return;
 			}
 
@@ -92,7 +87,7 @@ namespace TestLib.Worker.Updater
 
 			var msg = string.Format("Latest version {0}, current version {1}: update is{2}necessary.",
 				latestVersion, currentVersion, need ? " " : " not ");
-			File.AppendAllText("log.txt", msg);
+			log(msg);
 
 			if (!need)
 			{
@@ -100,7 +95,16 @@ namespace TestLib.Worker.Updater
 			}
 
 			var tmpFile = Path.GetTempFileName();
-			client.DownloadFile(latestProgramUrl, tmpFile);
+
+			try
+			{
+				client.DownloadFile(latestBinaryUrl, tmpFile);
+			}
+			catch (Exception ex)
+			{
+				log(string.Format("Failed to download latest binary from {0}. Exception: {1}", latestBinaryUrl, ex));
+				return;
+			}
 
 			var archive = ZipFile.OpenRead(tmpFile);
 			foreach (var entry in archive.Entries)
